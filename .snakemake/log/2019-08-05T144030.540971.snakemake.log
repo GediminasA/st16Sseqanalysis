@@ -1,0 +1,4 @@
+KeyError in line 25 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/0_1_configuration.smk:
+'BENCH-DIR'
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 16, in <module>
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/0_1_configuration.smk", line 25, in <module>

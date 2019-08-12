@@ -1,0 +1,224 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	agregate_count
+	1	all
+	1	count_reads
+	1	cp_read_counts
+	1	filter_primer_sequence_having_reads
+	1	filterout_r1primer_sequence_having_reads
+	1	filterout_r2primer_sequence_having_reads
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	match_pairs_after_filtering
+	1	prefilter_primer_sequence_having_reads
+	1	retrim_R2_adapters_from_primers
+	1	subsample
+	1	trim_adapters
+	15
+
+[Wed Aug  7 19:17:52 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_coli/ODN-E-coli-1_S1R1_input_list.sh, tmp_coli/ODN-E-coli-1_S1R2_input_list.sh
+    jobid: 13
+    wildcards: stem=ODN-E-coli-1_S1
+
+[Wed Aug  7 19:17:53 2019]
+Finished job 13.
+1 of 15 steps (7%) done
+
+[Wed Aug  7 19:17:53 2019]
+rule get_fastq1:
+    input: tmp_coli/ODN-E-coli-1_S1R1_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz
+    jobid: 10
+    wildcards: stem=ODN-E-coli-1_S1
+
+./tmp_coli/ODN-E-coli-1_S1R1_input_list.sh > tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz
+
+[Wed Aug  7 19:17:53 2019]
+rule get_fastq2:
+    input: tmp_coli/ODN-E-coli-1_S1R2_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    jobid: 11
+    wildcards: stem=ODN-E-coli-1_S1
+
+./tmp_coli/ODN-E-coli-1_S1R2_input_list.sh > tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+[Wed Aug  7 19:18:22 2019]
+Finished job 10.
+2 of 15 steps (13%) done
+[Wed Aug  7 19:18:25 2019]
+Finished job 11.
+3 of 15 steps (20%) done
+
+[Wed Aug  7 19:18:25 2019]
+rule trim_adapters:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_contamination.log, tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz
+    log: output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+    jobid: 8
+    benchmark: benchmarks/trimming_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz out2=tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz ref=datasets/bbmap/two_short.fa threads=8 ktrim=r k=23 mink=11 hdist=1 minlength=100 maxns=1 qtrim=r trimq=15 tpe tbo threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_contamination.log overwrite=t -Xmx4g 2> output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:18:32 2019]
+Finished job 8.
+4 of 15 steps (27%) done
+
+[Wed Aug  7 19:18:32 2019]
+rule count_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_read_counts.txt
+    jobid: 14
+    benchmark: benchmarks/ODN-E-coli-1_S1_count_reads.log
+    wildcards: stem=ODN-E-coli-1_S1
+
+./scripts/fastq_num_reads.sh tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz > tmp_coli/ODN-E-coli-1_S1_read_counts.txt; sed -i -e 's/^/ODN-E-coli-1_S1 /' tmp_coli/ODN-E-coli-1_S1_read_counts.txt ; echo >>  tmp_coli/ODN-E-coli-1_S1_read_counts.txt
+[Wed Aug  7 19:18:38 2019]
+Finished job 14.
+5 of 15 steps (33%) done
+
+[Wed Aug  7 19:18:38 2019]
+rule agregate_count:
+    input: tmp_coli/ODN-E-coli-1_S1_read_counts.txt
+    output: tmp_coli/read_counts.txt
+    jobid: 12
+
+cat tmp_coli/ODN-E-coli-1_S1_read_counts.txt > tmp_coli/read_counts.txt
+[Wed Aug  7 19:18:38 2019]
+Finished job 12.
+6 of 15 steps (40%) done
+
+[Wed Aug  7 19:18:38 2019]
+rule cp_read_counts:
+    input: tmp_coli/read_counts.txt
+    output: output_coli/read_counts.txt
+    jobid: 9
+
+cp tmp_coli/read_counts.txt output_coli/read_counts.txt
+[Wed Aug  7 19:18:38 2019]
+Finished job 9.
+7 of 15 steps (47%) done
+
+[Wed Aug  7 19:18:38 2019]
+rule subsample:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz, output_coli/read_counts.txt
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    log: output_coli/LOGS/SEQTK/R1/ODN-E-coli-1_S1.log, output_coli/LOGS/SEQTK/R2/ODN-E-coli-1_S1.log
+    jobid: 7
+    benchmark: benchmarks/ODN-E-coli-1_S1_subsampling.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 4
+
+minimum=`python ./scripts/get_minimum_read_number.py --input output_coli/read_counts.txt`;
+            seqkit sample -s 11 -j 4 --two-pass -n $minimum             tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz -o tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz 2> output_coli/LOGS/SEQTK/R1/ODN-E-coli-1_S1.log;
+            seqkit sample -s 11 -j 4 --two-pass -n $minimum             tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz -o tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz 2> output_coli/LOGS/SEQTK/R2/ODN-E-coli-1_S1.log;
+[Wed Aug  7 19:18:57 2019]
+Finished job 7.
+8 of 15 steps (53%) done
+
+[Wed Aug  7 19:18:57 2019]
+rule prefilter_primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_prefilteringbasedonR1.log, tmp_coli/ODN-E-coli-1_S1_R1_001filteredpre.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filteredpre.fastq.gz
+    log: output_coli/LOGS/filteringR1_ODN-E-coli-1_S1.log
+    jobid: 6
+    benchmark: benchmarks/prefilteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz outm=tmp_coli/ODN-E-coli-1_S1_R1_001filteredpre.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz outm2=tmp_coli/ODN-E-coli-1_S1_R2_001filteredpre.fastq.gz ref=datasets/bbmap/R1_for.fasta threads=8  k=15  threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_prefilteringbasedonR1.log overwrite=t -Xmx4g 2> output_coli/LOGS/filteringR1_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:19:00 2019]
+Finished job 6.
+9 of 15 steps (60%) done
+
+[Wed Aug  7 19:19:00 2019]
+rule filter_primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filteredpre.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filteredpre.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1R2primer.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    log: output_coli/LOGS/filteringR1R2_ODN-E-coli-1_S1.log
+    jobid: 5
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001filteredpre.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001filteredpre.fastq.gz out2=tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz ref=datasets/bbmap/R1_rev.fasta threads=8  k=15  threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1R2primer.log overwrite=t -Xmx4g 2> output_coli/LOGS/filteringR1R2_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:19:03 2019]
+Finished job 5.
+10 of 15 steps (67%) done
+
+[Wed Aug  7 19:19:03 2019]
+rule filterout_r2primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R2_discradingr2seq.log, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz
+    log: output_coli/LOGS/discardingr2seq_ODN-E-coli-1_S1.log
+    jobid: 4
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz ref=datasets/bbmap/R1_for.fasta threads=8  k=12 hammingdistance=1 restrictleft=40    threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R2_discradingr2seq.log overwrite=t -Xmx4g 2> output_coli/LOGS/discardingr2seq_ODN-E-coli-1_S1.log
+
+[Wed Aug  7 19:19:03 2019]
+rule filterout_r1primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R1_refiltering.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz
+    log: output_coli/LOGS/refilteringr1seq_ODN-E-coli-1_S1.log
+    jobid: 3
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz outm=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz ref=datasets/bbmap/R1_for.fasta threads=8  k=15 restrictleft=40  threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R1_refiltering.log overwrite=t -Xmx4g 2> output_coli/LOGS/refilteringr1seq_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:19:04 2019]
+Finished job 3.
+11 of 15 steps (73%) done
+[Wed Aug  7 19:19:04 2019]
+Finished job 4.
+12 of 15 steps (80%) done
+
+[Wed Aug  7 19:19:04 2019]
+rule retrim_R2_adapters_from_primers:
+    input: tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_r2retriming.log, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz
+    log: output_coli/LOGS/BBDUK/r2retrimming_ODN-E-coli-1_S1.log
+    jobid: 2
+    benchmark: benchmarks/trimming_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz ref=datasets/bbmap/R1_for.fasta threads=8 ktrim=r k=15 mink=7 hdist=1 minlength=100 maxns=1 qtrim=r trimq=15 tpe tbo threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_r2retriming.log overwrite=t -Xmx4g 2> output_coli/LOGS/BBDUK/r2retrimming_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:19:06 2019]
+Finished job 2.
+13 of 15 steps (87%) done
+
+[Wed Aug  7 19:19:06 2019]
+rule match_pairs_after_filtering:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_repaired.fastq.gz
+    log: output_coli/LOGS/rematchingpairs_ODN-E-coli-1_S1.log
+    jobid: 1
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+repair.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz  in2=tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz out2=tmp_coli/ODN-E-coli-1_S1_R2_001filtered_repaired.fastq.gz threads=8 -Xmx4g &> output_coli/LOGS/rematchingpairs_ODN-E-coli-1_S1.log
+[Wed Aug  7 19:19:08 2019]
+Finished job 1.
+14 of 15 steps (93%) done
+
+[Wed Aug  7 19:19:08 2019]
+localrule all:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz
+    jobid: 0
+
+[Wed Aug  7 19:19:08 2019]
+Finished job 0.
+15 of 15 steps (100%) done
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T191752.052852.snakemake.log

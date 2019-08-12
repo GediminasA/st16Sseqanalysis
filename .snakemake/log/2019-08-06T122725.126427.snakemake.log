@@ -1,0 +1,35 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	detect_rRNA
+	1
+
+[Tue Aug  6 12:27:25 2019]
+rule detect_rRNA:
+    input: tmp_coli/ODN-E-coli-1_S1_contigs.fasta
+    output: tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.gtf
+    log: tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.log
+    jobid: 0
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 12
+
+ barrnap --kingdom bac --reject  --threads 12 tmp_coli/ODN-E-coli-1_S1_contigs.fasta > tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.gtf 2> tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.log 
+    [Tue Aug  6 12:27:25 2019]
+    Error in rule detect_rRNA:
+        jobid: 0
+        output: tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.gtf
+        log: tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.log
+
+RuleException:
+CalledProcessError in line 26 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Command ' set -euo pipefail;   barrnap --kingdom bac --reject  --threads 12 tmp_coli/ODN-E-coli-1_S1_contigs.fasta > tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.gtf 2> tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.log ' returned non-zero exit status 1.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 26, in __rule_detect_rRNA
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Removing output files of failed job detect_rRNA since they might be corrupted:
+tmp_coli/ODN-E-coli-1_S1_contigs_rRNA.gtf
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-06T122725.126427.snakemake.log

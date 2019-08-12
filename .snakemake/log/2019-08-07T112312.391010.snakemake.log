@@ -1,0 +1,32 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	detect_rRNA
+	2
+
+[Wed Aug  7 11:23:12 2019]
+rule detect_rRNA:
+    input: tmp_coli/ODN-E-coli-1_S1_contigs_size_filtered_clustered.fasta
+    output: tmp_coli/ODN-E-coli-1_S1_contigs_size_filtered_clustered_rRNA.gtf
+    log: tmp_coli/ODN-E-coli-1_S1_contigs_size_filtered_clustered_contigs_rRNA.log
+    jobid: 2
+    wildcards: stem=ODN-E-coli-1_S1_contigs_size_filtered_clustered
+    threads: 12
+
+[Wed Aug  7 11:23:14 2019]
+Finished job 2.
+1 of 2 steps (50%) done
+
+[Wed Aug  7 11:23:14 2019]
+localrule all:
+    input: output_coli/MULTIQC/fastqc_report_trimmed_reads.html, tmp_coli/ODN-E-coli-1_S1_contigs_size_filtered_clustered.fasta, tmp_coli/ODN-E-coli-1_S1_contigs_size_filtered_clustered_rRNA.gtf, tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz
+    jobid: 0
+
+[Wed Aug  7 11:23:14 2019]
+Finished job 0.
+2 of 2 steps (100%) done
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T112312.391010.snakemake.log

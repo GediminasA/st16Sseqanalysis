@@ -1,0 +1,3 @@
+SyntaxError in line 5 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+EOL while scanning string literal
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 20, in <module>

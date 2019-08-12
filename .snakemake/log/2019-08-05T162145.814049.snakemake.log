@@ -1,0 +1,46 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	agregate_count
+	1	all
+	2	assemble
+	2	count_reads
+	1	cp_read_counts
+	2	detect_rRNA
+	4	fastqc
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	multiqc_pro
+	2	subsample
+	2	trim_adapters
+	21
+
+[Mon Aug  5 16:21:46 2019]
+rule trim_adapters:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_contamination.log, tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz
+    log: output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+    jobid: 12
+    benchmark: benchmarks/trimming_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz out2=tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz ref=datasets/bbmap/two_short.fa threads=8 ktrim=r k=23 mink=11 hdist=1 minlength=10 maxns=1 qtrim=r trimq=15 tpe tbo threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_contamination.log overwrite=t -Xmx4g 2> output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+
+[Mon Aug  5 16:21:46 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_coli/V8_E_coliR1_input_list.sh, tmp_coli/V8_E_coliR2_input_list.sh
+    jobid: 23
+    wildcards: stem=V8_E_coli
+
+[Mon Aug  5 16:21:58 2019]
+Finished job 12.
+1 of 21 steps (5%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-05T162145.814049.snakemake.log

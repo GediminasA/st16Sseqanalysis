@@ -1,0 +1,164 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	agregate_count
+	1	all
+	1	count_reads
+	1	cp_read_counts
+	1	filter_primer_sequence_having_reads
+	1	filterout_r1primer_sequence_having_reads
+	1	filterout_r2primer_sequence_having_reads
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	subsample
+	1	trim_adapters
+	12
+
+[Wed Aug  7 17:48:21 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_coli/ODN-E-coli-1_S1R1_input_list.sh, tmp_coli/ODN-E-coli-1_S1R2_input_list.sh
+    jobid: 11
+    wildcards: stem=ODN-E-coli-1_S1
+
+[Wed Aug  7 17:48:22 2019]
+Finished job 11.
+1 of 12 steps (8%) done
+
+[Wed Aug  7 17:48:22 2019]
+rule get_fastq2:
+    input: tmp_coli/ODN-E-coli-1_S1R2_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    jobid: 8
+    wildcards: stem=ODN-E-coli-1_S1
+
+
+[Wed Aug  7 17:48:22 2019]
+rule get_fastq1:
+    input: tmp_coli/ODN-E-coli-1_S1R1_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz
+    jobid: 9
+    wildcards: stem=ODN-E-coli-1_S1
+
+[Wed Aug  7 17:48:51 2019]
+Finished job 9.
+2 of 12 steps (17%) done
+[Wed Aug  7 17:48:54 2019]
+Finished job 8.
+3 of 12 steps (25%) done
+
+[Wed Aug  7 17:48:54 2019]
+rule trim_adapters:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_contamination.log, tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz
+    log: output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+    jobid: 6
+    benchmark: benchmarks/trimming_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+[Wed Aug  7 17:49:03 2019]
+Finished job 6.
+4 of 12 steps (33%) done
+
+[Wed Aug  7 17:49:03 2019]
+rule count_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_read_counts.txt
+    jobid: 10
+    benchmark: benchmarks/ODN-E-coli-1_S1_count_reads.log
+    wildcards: stem=ODN-E-coli-1_S1
+
+[Wed Aug  7 17:49:09 2019]
+Finished job 10.
+5 of 12 steps (42%) done
+
+[Wed Aug  7 17:49:09 2019]
+rule agregate_count:
+    input: tmp_coli/ODN-E-coli-1_S1_read_counts.txt
+    output: tmp_coli/read_counts.txt
+    jobid: 7
+
+[Wed Aug  7 17:49:09 2019]
+Finished job 7.
+6 of 12 steps (50%) done
+
+[Wed Aug  7 17:49:09 2019]
+rule cp_read_counts:
+    input: tmp_coli/read_counts.txt
+    output: output_coli/read_counts.txt
+    jobid: 5
+
+[Wed Aug  7 17:49:09 2019]
+Finished job 5.
+7 of 12 steps (58%) done
+
+[Wed Aug  7 17:49:09 2019]
+rule subsample:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001Trimmed.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001Trimmed.fastq.gz, output_coli/read_counts.txt
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    log: output_coli/LOGS/SEQTK/R1/ODN-E-coli-1_S1.log, output_coli/LOGS/SEQTK/R2/ODN-E-coli-1_S1.log
+    jobid: 4
+    benchmark: benchmarks/ODN-E-coli-1_S1_subsampling.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 4
+
+[Wed Aug  7 17:49:28 2019]
+Finished job 4.
+8 of 12 steps (67%) done
+
+[Wed Aug  7 17:49:28 2019]
+rule filter_primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    log: output_coli/LOGS/filteringR1_ODN-E-coli-1_S1.log
+    jobid: 2
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+[Wed Aug  7 17:49:31 2019]
+Finished job 2.
+9 of 12 steps (75%) done
+
+[Wed Aug  7 17:49:31 2019]
+rule filterout_r1primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R1_refiltering.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz
+    log: output_coli/LOGS/refilteringr1seq_ODN-E-coli-1_S1.log
+    jobid: 3
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+
+[Wed Aug  7 17:49:31 2019]
+rule filterout_r2primer_sequence_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_R2_discradingr2seq.log, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz
+    log: output_coli/LOGS/discardingr2seq_ODN-E-coli-1_S1.log
+    jobid: 1
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+[Wed Aug  7 17:49:32 2019]
+Finished job 3.
+10 of 12 steps (83%) done
+[Wed Aug  7 17:49:32 2019]
+Finished job 1.
+11 of 12 steps (92%) done
+
+[Wed Aug  7 17:49:32 2019]
+localrule all:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz
+    jobid: 0
+
+[Wed Aug  7 17:49:32 2019]
+Finished job 0.
+12 of 12 steps (100%) done
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T174820.955898.snakemake.log

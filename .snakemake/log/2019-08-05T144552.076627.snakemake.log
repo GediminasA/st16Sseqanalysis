@@ -1,0 +1,21 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	2	assemble
+	3
+
+[Mon Aug  5 14:45:52 2019]
+rule assemble:
+    input: tmp_coli/ODN-E-coli-2_S2_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-2_S2_R2_001subs.fastq.gz
+    output: tmp_coli/ODN-E-coli-2_S2_contigs.fasta, tmp_coli/ODN-E-coli-2_S2.fastg
+    jobid: 1
+    benchmark: bench_coli/assemble_ODN-E-coli-2_S2.log
+    wildcards: stem=ODN-E-coli-2_S2
+    threads: 12
+
+RuleException in line 3 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+NameError: The name 'spades_dir' is unknown in this context. Please make sure that you defined that variable. Also note that braces not used for variable access have to be escaped by repeating them, i.e. {{print $1}}

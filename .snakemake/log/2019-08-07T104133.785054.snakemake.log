@@ -1,0 +1,46 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	2	assemble
+	1	detect_rRNA
+	1	filter_primer_sequence_having_reads
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	subsample
+	1	trim_adapters
+	10
+
+[Wed Aug  7 10:41:34 2019]
+rule assemble:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_contigs.fasta, tmp_coli/ODN-E-coli-1_S1.fastg
+    jobid: 5
+    benchmark: bench_coli/assemble_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 12
+
+
+[Wed Aug  7 10:41:34 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_coli/filter_size/ODN-E-coli-1_S1R1_input_list.sh, tmp_coli/filter_size/ODN-E-coli-1_S1R2_input_list.sh
+    jobid: 22
+    wildcards: stem=filter_size/ODN-E-coli-1_S1
+
+Terminating processes on user request, this might take some time.
+    [Wed Aug  7 10:41:37 2019]
+    Error in rule assemble:
+        jobid: 5
+        output: tmp_coli/ODN-E-coli-1_S1_contigs.fasta, tmp_coli/ODN-E-coli-1_S1.fastg
+
+RuleException:
+CalledProcessError in line 19 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Command ' set -euo pipefail;  rnaspades.py  -1 tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz -2 tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz  -t 12 --only-assembler -o tmp_coli/ODN-E-coli-1_S1_contigs --tmp-dir tmp_coli; cp tmp_coli/ODN-E-coli-1_S1_contigs/transcripts.fasta tmp_coli/ODN-E-coli-1_S1_contigs.fasta; cp tmp_coli/ODN-E-coli-1_S1_contigs/assembly_graph.fastg tmp_coli/ODN-E-coli-1_S1.fastg ' returned non-zero exit status 1.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 19, in __rule_assemble
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T104133.785054.snakemake.log

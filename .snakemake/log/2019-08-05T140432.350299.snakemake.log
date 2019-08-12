@@ -1,0 +1,107 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	clone_slimfastq
+	2	fastqc
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	multiqc_pro
+	1	trim_adapters
+	9
+
+[Mon Aug  5 14:04:32 2019]
+rule clone_slimfastq:
+    output: dependencies/slimfastq/slimfastq
+    jobid: 8
+
+[Mon Aug  5 14:04:47 2019]
+Finished job 8.
+1 of 9 steps (11%) done
+
+[Mon Aug  5 14:04:47 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_small_dataset/HBR_100_Collibri_chr21small_AR1_input_list.sh, tmp_small_dataset/HBR_100_Collibri_chr21small_AR2_input_list.sh
+    jobid: 7
+    wildcards: stem=HBR_100_Collibri_chr21small_A
+
+[Mon Aug  5 14:04:48 2019]
+Finished job 7.
+2 of 9 steps (22%) done
+
+[Mon Aug  5 14:04:48 2019]
+rule get_fastq2:
+    input: tmp_small_dataset/HBR_100_Collibri_chr21small_AR2_input_list.sh
+    output: tmp_small_dataset/HBR_100_Collibri_chr21small_A_R2_001.fastq.gz
+    jobid: 6
+    wildcards: stem=HBR_100_Collibri_chr21small_A
+
+[Mon Aug  5 14:04:48 2019]
+Finished job 6.
+3 of 9 steps (33%) done
+
+[Mon Aug  5 14:04:48 2019]
+rule get_fastq1:
+    input: tmp_small_dataset/HBR_100_Collibri_chr21small_AR1_input_list.sh
+    output: tmp_small_dataset/HBR_100_Collibri_chr21small_A_R1_001.fastq.gz
+    jobid: 5
+    wildcards: stem=HBR_100_Collibri_chr21small_A
+
+[Mon Aug  5 14:04:48 2019]
+Finished job 5.
+4 of 9 steps (44%) done
+
+[Mon Aug  5 14:04:48 2019]
+rule trim_adapters:
+    input: tmp_small_dataset/HBR_100_Collibri_chr21small_A_R1_001.fastq.gz, tmp_small_dataset/HBR_100_Collibri_chr21small_A_R2_001.fastq.gz
+    output: output_small_dataset/LOGS/BBDUK/HBR_100_Collibri_chr21small_A_contamination.log, tmp_small_dataset/HBR_100_Collibri_chr21small_A_R1_001Trimmed.fastq.gz, tmp_small_dataset/HBR_100_Collibri_chr21small_A_R2_001Trimmed.fastq.gz
+    log: output_small_dataset/LOGS/BBDUK/trimming_HBR_100_Collibri_chr21small_A.log
+    jobid: 4
+    benchmark: benchmarks/trimming_HBR_100_Collibri_chr21small_A.log
+    wildcards: stem=HBR_100_Collibri_chr21small_A
+
+[Mon Aug  5 14:05:26 2019]
+Finished job 4.
+5 of 9 steps (56%) done
+
+[Mon Aug  5 14:05:26 2019]
+rule fastqc:
+    input: tmp_small_dataset/HBR_100_Collibri_chr21small_A_R1_001Trimmed.fastq.gz
+    output: output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R1_001Trimmed_fastqc.zip, output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R1_001Trimmed_fastqc.html
+    log: output_small_dataset/LOGS/FASTQC/HBR_100_Collibri_chr21small_A_R1_001Trimmed.log
+    jobid: 3
+    benchmark: benchmarks/fastqc_HBR_100_Collibri_chr21small_A_R1_001Trimmed.log
+    wildcards: stem=HBR_100_Collibri_chr21small_A_R1_001Trimmed
+
+Removing temporary output file tmp_small_dataset/HBR_100_Collibri_chr21small_A_R1_001Trimmed.fastq.gz.
+[Mon Aug  5 14:05:40 2019]
+Finished job 3.
+6 of 9 steps (67%) done
+
+[Mon Aug  5 14:05:40 2019]
+rule fastqc:
+    input: tmp_small_dataset/HBR_100_Collibri_chr21small_A_R2_001Trimmed.fastq.gz
+    output: output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.zip, output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.html
+    log: output_small_dataset/LOGS/FASTQC/HBR_100_Collibri_chr21small_A_R2_001Trimmed.log
+    jobid: 2
+    benchmark: benchmarks/fastqc_HBR_100_Collibri_chr21small_A_R2_001Trimmed.log
+    wildcards: stem=HBR_100_Collibri_chr21small_A_R2_001Trimmed
+
+Terminating processes on user request, this might take some time.
+[Mon Aug  5 14:05:45 2019]
+Error in rule fastqc:
+    jobid: 2
+    output: output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.zip, output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.html
+    log: output_small_dataset/LOGS/FASTQC/HBR_100_Collibri_chr21small_A_R2_001Trimmed.log
+
+RuleException:
+CalledProcessError in line 20 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk:
+Command ' set -euo pipefail;  fastqc tmp_small_dataset/HBR_100_Collibri_chr21small_A_R2_001Trimmed.fastq.gz -o output_small_dataset/fastqc_report_htmls_zips/ -t 1 -k 5 2> output_small_dataset/LOGS/FASTQC/HBR_100_Collibri_chr21small_A_R2_001Trimmed.log ' returned non-zero exit status 130.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk", line 20, in __rule_fastqc
+  File "/media/root/ocean/shared/bin/miniconda/envs/ngs_analysis2/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-05T140432.350299.snakemake.log

@@ -1,0 +1,30 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	multiqc_pro
+	2
+
+[Mon Aug  5 14:07:00 2019]
+rule multiqc_pro:
+    input: output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R1_001Trimmed_fastqc.zip, output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.zip
+    output: output_small_dataset/MULTIQC/fastqc_report_trimmed_reads.html, output_small_dataset/MULTIQC/fastqc_report_trimmed_reads_data
+    jobid: 1
+    benchmark: benchmarks/multi_qc.log
+
+[Mon Aug  5 14:07:00 2019]
+Error in rule multiqc_pro:
+    jobid: 1
+    output: output_small_dataset/MULTIQC/fastqc_report_trimmed_reads.html, output_small_dataset/MULTIQC/fastqc_report_trimmed_reads_data
+
+RuleException:
+CalledProcessError in line 42 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk:
+Command ' set -euo pipefail;  multiqc output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R1_001Trimmed_fastqc.zip output_small_dataset/fastqc_report_htmls_zips/HBR_100_Collibri_chr21small_A_R2_001Trimmed_fastqc.zip -o output_small_dataset/MULTIQC -n fastqc_report_trimmed_reads ' returned non-zero exit status 127.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk", line 42, in __rule_multiqc_pro
+  File "/media/root/ocean/shared/bin/miniconda/envs/ngs_analysis2/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-05T140659.747295.snakemake.log

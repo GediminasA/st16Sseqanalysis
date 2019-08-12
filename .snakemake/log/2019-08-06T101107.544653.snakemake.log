@@ -1,0 +1,34 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	2	filteron_R1_sequence
+	3
+
+[Tue Aug  6 10:11:07 2019]
+rule filteron_R1_sequence:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+    log: output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+    jobid: 3
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+
+Terminating processes on user request, this might take some time.
+    [Tue Aug  6 10:11:15 2019]
+    Error in rule filteron_R1_sequence:
+        jobid: 3
+        output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+        log: output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log
+
+RuleException:
+CalledProcessError in line 54 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Command ' set -euo pipefail;  bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz outm=tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz outm2=tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz ref=datasets/bbmap/R1.fasta threads=1  k=15  threads=1 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filteringbasedonR1.log overwrite=t -Xmx4g 2> output_coli/LOGS/BBDUK/trimming_ODN-E-coli-1_S1.log ' returned non-zero exit status 130.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 54, in __rule_filteron_R1_sequence
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Removing output files of failed job filteron_R1_sequence since they might be corrupted:
+tmp_coli/ODN-E-coli-1_S1_R1_001filtered.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered.fastq.gz
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-06T101107.544653.snakemake.log

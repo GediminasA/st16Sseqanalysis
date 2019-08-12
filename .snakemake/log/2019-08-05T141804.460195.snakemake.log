@@ -1,0 +1,25 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	2	fastqc
+	1	generate_script_for_merging_files
+	1	get_fastq1
+	1	get_fastq2
+	1	multiqc_pro
+	1	trim_adapters
+	8
+
+[Mon Aug  5 14:18:04 2019]
+rule generate_script_for_merging_files:
+    input: dependencies/slimfastq/slimfastq
+    output: tmp_coli/ODN-E-coliR1_input_list.sh, tmp_coli/ODN-E-coliR2_input_list.sh
+    jobid: 7
+    wildcards: stem=ODN-E-coli
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-05T141804.460195.snakemake.log

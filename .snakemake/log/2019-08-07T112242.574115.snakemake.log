@@ -1,0 +1,4 @@
+KeyError in line 89 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+'max_contig_length'
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 20, in <module>
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 89, in <module>

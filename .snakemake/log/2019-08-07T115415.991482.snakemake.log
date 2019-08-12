@@ -1,0 +1,4 @@
+NameError in line 7 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+name 'tm' is not defined
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 20, in <module>
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 7, in <module>

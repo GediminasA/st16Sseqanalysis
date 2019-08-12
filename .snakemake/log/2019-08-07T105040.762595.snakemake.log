@@ -1,0 +1,53 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	agregate_count
+	1	all
+	1	assemble
+	1	count_reads
+	1	cp_read_counts
+	1	detect_rRNA
+	2	fastqc
+	1	filter_primer_sequence_having_reads
+	1	get_fastq1
+	1	get_fastq2
+	1	multiqc_pro
+	1	subsample
+	1	trim_adapters
+	14
+
+[Wed Aug  7 10:50:41 2019]
+rule get_fastq1:
+    input: tmp_coli/ODN-E-coli-1_S1R1_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001.fastq.gz
+    jobid: 10
+    wildcards: stem=ODN-E-coli-1_S1
+
+[Wed Aug  7 10:51:10 2019]
+Finished job 10.
+1 of 14 steps (7%) done
+
+[Wed Aug  7 10:51:10 2019]
+rule get_fastq2:
+    input: tmp_coli/ODN-E-coli-1_S1R2_input_list.sh
+    output: tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+    jobid: 11
+    wildcards: stem=ODN-E-coli-1_S1
+
+Terminating processes on user request, this might take some time.
+    [Wed Aug  7 10:51:13 2019]
+    Error in rule get_fastq2:
+        jobid: 11
+        output: tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+
+RuleException:
+CalledProcessError in line 36 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/1_0_download.smk:
+Command ' set -euo pipefail;  ./tmp_coli/ODN-E-coli-1_S1R2_input_list.sh > tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz ' died with <Signals.SIGINT: 2>.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/1_0_download.smk", line 36, in __rule_get_fastq2
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Removing output files of failed job get_fastq2 since they might be corrupted:
+tmp_coli/ODN-E-coli-1_S1_R2_001.fastq.gz
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T105040.762595.snakemake.log

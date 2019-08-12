@@ -1,0 +1,32 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	filter_16S_having_reads
+	1
+
+[Tue Aug  6 11:44:47 2019]
+rule filter_16S_having_reads:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz
+    output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filtering16s.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered16s.fastq.gz
+    log: output_coli/LOGS/filtering16s_ODN-E-coli-1_S1.log
+    jobid: 0
+    benchmark: benchmarks/filtering16s_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+Terminating processes on user request, this might take some time.
+    [Tue Aug  6 11:44:51 2019]
+    Error in rule filter_16S_having_reads:
+        jobid: 0
+        output: output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filtering16s.log, tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered16s.fastq.gz
+        log: output_coli/LOGS/filtering16s_ODN-E-coli-1_S1.log
+
+RuleException:
+CalledProcessError in line 79 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Command ' set -euo pipefail;  bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001subs.fastq.gz outm=tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz in2=tmp_coli/ODN-E-coli-1_S1_R2_001subs.fastq.gz outm2=tmp_coli/ODN-E-coli-1_S1_R2_001filtered16s.fastq.gz ref=/media/root/ocean/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta threads=8 stats=output_coli/LOGS/BBDUK/ODN-E-coli-1_S1_filtering16s.log overwrite=t -Xmx4g 2> output_coli/LOGS/filtering16s_ODN-E-coli-1_S1.log ' returned non-zero exit status 130.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 79, in __rule_filter_16S_having_reads
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-06T114446.509974.snakemake.log

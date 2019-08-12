@@ -1,0 +1,13 @@
+channels:
+  - conda-forge
+  - anaconda
+  - bioconda
+  - defaults
+dependencies:
+  - bbmap=38.06
+  - fastqc=0.11.7
+  - multiqc=1.6a0
+  - python=3.6.3
+  - sambamba=0.6.6=2
+  - seqkit=0.8.1
+  - snakemake=5.2.2=py36_1

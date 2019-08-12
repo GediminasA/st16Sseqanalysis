@@ -1,0 +1,51 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	2	assemble
+	2	detect_rRNA
+	1	filter_16S_having_reads
+	1	filter_primer_sequence_having_reads
+	7
+
+[Tue Aug  6 12:00:44 2019]
+rule assemble:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_contigs.fasta, tmp_coli/ODN-E-coli-1_S1.fastg
+    jobid: 5
+    benchmark: bench_coli/assemble_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 12
+
+
+[Tue Aug  6 12:00:44 2019]
+rule filter_primer_sequence_having_reads:
+    input: tmp_coli/V8-E-coli_S13_R1_001subs.fastq.gz, tmp_coli/V8-E-coli_S13_R2_001subs.fastq.gz
+    output: output_coli/LOGS/BBDUK/V8-E-coli_S13_filteringbasedonR1.log, tmp_coli/V8-E-coli_S13_R1_001filtered.fastq.gz, tmp_coli/V8-E-coli_S13_R2_001filtered.fastq.gz
+    log: output_coli/LOGS/filteringR1_V8-E-coli_S13.log
+    jobid: 6
+    benchmark: benchmarks/filteringR1_V8-E-coli_S13.log
+    wildcards: stem=V8-E-coli_S13
+    threads: 8
+
+    [Tue Aug  6 12:00:45 2019]
+    Error in rule assemble:
+        jobid: 5
+        output: tmp_coli/ODN-E-coli-1_S1_contigs.fasta, tmp_coli/ODN-E-coli-1_S1.fastg
+
+RuleException:
+CalledProcessError in line 19 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Command ' set -euo pipefail;  rnaspades.py  -1 tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz -2 tmp_coli/ODN-E-coli-1_S1_R1_001filtered16s.fastq.gz  -t 12 --only-assembler -o tmp_coli/ODN-E-coli-1_S1_contigs --tmp-dir tmp_coli; cp tmp_coli/ODN-E-coli-1_S1_contigs/transcripts.fasta tmp_coli/ODN-E-coli-1_S1_contigs.fasta; cp tmp_coli/ODN-E-coli-1_S1_contigs/assembly_graph.fastg tmp_coli/ODN-E-coli-1_S1.fastg ' returned non-zero exit status 1.
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 19, in __rule_assemble
+  File "/media/root/ocean/shared/bin/miniconda/envs/brc/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Removing temporary output file tmp_coli/V8-E-coli_S13_R2_001subs.fastq.gz.
+Removing temporary output file tmp_coli/V8-E-coli_S13_R1_001subs.fastq.gz.
+[Tue Aug  6 12:00:47 2019]
+Finished job 6.
+1 of 7 steps (14%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-06T120043.356077.snakemake.log

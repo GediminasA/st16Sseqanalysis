@@ -1,0 +1,4 @@
+NameError in line 27 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk:
+name 'directory' is not defined
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 18, in <module>
+  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/2_0_fastqc.smk", line 27, in <module>

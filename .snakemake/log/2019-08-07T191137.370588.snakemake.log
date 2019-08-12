@@ -1,0 +1,31 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 24
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	match_pairs_after_filtering
+	2
+
+[Wed Aug  7 19:11:37 2019]
+rule match_pairs_after_filtering:
+    input: tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_wor1primer_retrim.fastq.gz
+    output: tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz, tmp_coli/ODN-E-coli-1_S1_R2_001filtered_repaired.fastq.gz
+    log: output_coli/LOGS/rematchingpairs_ODN-E-coli-1_S1.log
+    jobid: 1
+    benchmark: benchmarks/filteringR1_ODN-E-coli-1_S1.log
+    wildcards: stem=ODN-E-coli-1_S1
+    threads: 8
+
+bbduk.sh in=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz in=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_withr1primer.fastq.gz out=tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz threads=8 -Xmx4g &> output_coli/LOGS/rematchingpairs_ODN-E-coli-1_S1.log
+Waiting at most 5 seconds for missing files.
+MissingOutputException in line 32 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
+Missing files after 5 seconds:
+tmp_coli/ODN-E-coli-1_S1_R2_001filtered_repaired.fastq.gz
+This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait.
+Removing output files of failed job match_pairs_after_filtering since they might be corrupted:
+tmp_coli/ODN-E-coli-1_S1_R1_001filtered_repaired.fastq.gz
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /media/root/ocean/projects/ga/bracken_ribo_count/.snakemake/log/2019-08-07T191137.370588.snakemake.log
