@@ -33,11 +33,13 @@ wlogger.info(f'Output direcoty: [{CONFIG["OUT-DIR"]}]')
 rule all:
     input:
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        #expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
+        expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
         expand(tmp + "/{stem}_contigs_size_filtered_clustered_rRNA.gtf", stem=STEMS),
-        expand(tmp + "/{stem}_R1_001filtered_repaired.fastq.gz", stem=STEMS),
-        expand(tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz", stem=STEMS),
-        expand(tmp + "/{stem}_R1_001filtered_withr1primer.fastq.gz", stem=STEMS),
+        #expand(tmp + "/{stem}_R1_001filtered_repaired.fastq.gz", stem=STEMS),
+        #expand(tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz", stem=STEMS),
+        #expand(tmp + "/{stem}_R1_001filtered_withr1primer.fastq.gz", stem=STEMS),
+        expand(tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv", stem=STEMS),
+        expand(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz", stem=STEMS),
 
 
 

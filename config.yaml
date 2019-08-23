@@ -26,11 +26,24 @@ PRIMERS:
     R2: datasets/bbmap/R1_for.fasta #sequences that must not occure in R1
     R2_k: 15 #minimum lenth of substring to match
 
-16S_DB: /media/root/ocean/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta
-16S_DB_k: 40 # kmer matching 16S for reads filtering
-min_contig_length: 200
+ASSEMBLER: SPADES  #SPADES # BBMERGE 
+#Parameters for filterin out 16S havving reads
+16S:
+    DB:
+        fasta: /media/root/ocean/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta
+        k: 40 # kmer matching 16S for reads filtering
+    hmm: 
+        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm 
+        e: 100
+        ts: 2055
+        te: 2100
+        rs: 1
+        re: 60
+        length: 40 #match length in read
+
+min_contig_length: 300
 max_contig_length: 12000000000
-clustering_frac: 0.95
+clustering_frac: 0.8
 #########################
 # CPU and memory params #
 #########################
@@ -41,6 +54,7 @@ MACHINE:
     threads_spades: 12
     threads_barnap: 12
     threads_cdhit: 12
+    threads_nhmmer: 12
 
 ##############
 # References #
