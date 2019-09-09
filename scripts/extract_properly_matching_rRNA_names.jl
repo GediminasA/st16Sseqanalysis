@@ -45,6 +45,9 @@ function main()
     t_data= split(parsed_args["16st"],":")
     t_star = parse(Int64,t_data[1])
     t_end = parse(Int64,t_data[2])
+    t_star, t_end = sort([t_star,t_end])
+    r_star, r_end = sort([r_star,r_end])
+
     minl = parsed_args["min"]
     println(stderr,"Filtering out matches in template between $t_star:$t_end")
     open(parsed_args["input"]) do f
@@ -58,6 +61,9 @@ function main()
                     te = parse(Int64,parts[6])
                     rs = parse(Int64,parts[9])
                     re = parse(Int64,parts[10])
+                    ts, te = sort([ts,te])
+                    rs, re = sort([rs,re])
+                    println("$r_star $r_end $t_star $t_end   real  $rs $re  $ts $te ")
                     if ( (re-rs+1) >= minl ) && (ts >= t_star) && (ts <= t_end) && (te >= t_star) && (te <= t_end) && (rs >= r_star) && (rs <= r_end) && (re >= r_star) && (re <= r_end)
                         println(stdout,rname)
                     end

@@ -17,7 +17,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
             CONFIG["MACHINE"]["threads_spades"]
         shell:
             "rnaspades.py  -1 {input[0]} -2 {input[1]} " +  #"-s {input[2]} " +
-            "-t {threads} --only-assembler  -o {params.spades_dir} --tmp-dir "+scratch+"; " +
+            "-t {threads}  --only-assembler  -o {params.spades_dir} --tmp-dir "+scratch+"; " +
             "cp {params.spades_dir}/transcripts.fasta {output[0]}; " +
             "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
 
@@ -48,7 +48,7 @@ rule detect_rRNA:
     output: tmp + "/{stem}_rRNA.gtf" 
     threads: CONFIG["MACHINE"]["threads_barnap"]
     log:  tmp + "/{stem}_contigs_rRNA.log"  
-    shell: " barrnap --kingdom bac --evalue 1e-4 --reject 0.01  --threads {threads} {input} | grep 16S  > {output} 2> {log} "
+    shell: " barrnap --kingdom bac --evalue 1e-4 --reject 0.005  --threads {threads} {input} | grep 16S  > {output} 2> {log} "
 
 
 
@@ -287,31 +287,6 @@ rule merge_reads:
 
 
 
-rule filter_16S_having_reads:
-    input:
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz"
-    output:
-        LOGS + "/BBDUK/{stem}_filtering16s.log",
-        temp(tmp + "/{stem}_R1_001filtered16s.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filtered16s.fastq.gz")
-    params:
-        ref =       CONFIG["16S"]["DB"],
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filtering16s_{stem}.log"
-    log:
-        LOGS + "/filtering16s_{stem}.log"
-    shell:
-        "bbduk.sh in={input[0]} outm={output[1]} " +
-                "in2={input[1]} outm2={output[2]} " +
-                "ref={params.ref} threads={threads} " +
-                "stats={output[0]} overwrite=t " +
-                "-Xmx{params.m}g 2> {log}"
-
-
 rule filter_size:
     input:
         tmp + "/{stem}.fasta"
@@ -334,3 +309,26 @@ rule custer:
         CONFIG["MACHINE"]["threads_cdhit"]
     shell:
         "cd-hit-est -T {threads} -c {params.clustering_frac} -i {input} -o {output} "
+
+rule map_contigs_on_ref:
+    input:
+        tmp + "/{stem}_clustered.fasta"
+    output:
+        temp(tmp + "/{stem}_aligned.bam")
+    params:
+        ref = CONFIG["ref"]
+    shell:
+        "bwa mem {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
+
+
+rule map_filtered_reads_on_ref:
+    input:
+        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
+        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+    output:
+        temp(tmp + "/{stem}_aligned_reads.bam")
+    params:
+        ref = CONFIG["ref"]
+    shell:
+        "bwa mem {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
+    

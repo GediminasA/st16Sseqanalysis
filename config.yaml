@@ -8,8 +8,10 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-INPUT-DIR: /media/root/ngs_nas3/2019_06_18_microbiomes_std  
-SAMPLES: ODN-E-coli-1_S1 
+INPUT-DIR: /media/root/ngs_nas3/2019_08_19_16S_metagenomai/190813_M02432_0357_000000000-CK3PC/Data/Intensities/BaseCalls
+SAMPLES: Equimolar-mix-55-Ecoli_S53 
+#INPUT-DIR: /media/root/ngs_nas3/2019_06_18_microbiomes_std  
+#SAMPLES: ODN-E-coli-1_S1 
 LANE-REGEX: "L\\d\\d\\d_"
 TMP-DIR: tmp_coli
 OUT-DIR: output_coli
@@ -24,7 +26,7 @@ PRIMERS:
     R1: datasets/bbmap/R1_rev.fasta #sequences that must occure in R1
     R1_k: 15 #minimum lenth of substring to match
     R2: datasets/bbmap/R1_for.fasta #sequences that must not occure in R1
-    R2_k: 15 #minimum lenth of substring to match
+    R2_k: 27 #minimum lenth of substring to match
 
 ASSEMBLER: SPADES  #SPADES # BBMERGE 
 #Parameters for filterin out 16S havving reads
@@ -35,15 +37,16 @@ ASSEMBLER: SPADES  #SPADES # BBMERGE
     hmm: 
         model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm 
         e: 100
-        ts: 2055
-        te: 2100
+        ts: 570    
+        te: 645
         rs: 1
-        re: 60
+        re: 100
         length: 40 #match length in read
 
 min_contig_length: 300
 max_contig_length: 12000000000
-clustering_frac: 0.8
+clustering_frac: 0.95
+ref: /mnt/beegfs/Databases/BACTERIA/k12_viktorijai/genome.fa 
 #########################
 # CPU and memory params #
 #########################
