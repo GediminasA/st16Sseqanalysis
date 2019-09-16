@@ -6,6 +6,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
         input:
             tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
             tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+            tmp + "/{stem}_contigs_bbmerge.fasta"
             #tmp + "/{stem}_001merged.fastq.gz"
         output:
             tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
@@ -16,19 +17,18 @@ if CONFIG["ASSEMBLER"] == "SPADES":
         threads:
             CONFIG["MACHINE"]["threads_spades"]
         shell:
-            "rnaspades.py  -1 {input[0]} -2 {input[1]} " +  #"-s {input[2]} " +
-            "-t {threads}  --only-assembler  -o {params.spades_dir} --tmp-dir "+scratch+"; " +
+            "rnaspades.py  -1 {input[0]} -2 {input[1]} --trusted-contigs {input[2]}" +  #"-s {input[2]} " +
+            " --ss-fr   -t {threads}  --only-assembler  -o {params.spades_dir} --tmp-dir "+scratch+"; " +
             "cp {params.spades_dir}/transcripts.fasta {output[0]}; " +
             "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
 
-if CONFIG["ASSEMBLER"] == "BBMERGE":
-    rule assemble:
+    rule assemble_bbmerge:
         input:
             tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
             tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
             #tmp + "/{stem}_001merged.fastq.gz"
         output:
-            tmp + "/{stem}_contigs.fasta"
+            tmp + "/{stem}_contigs_bbmerge.fasta"
         log:
             LOGS + "/rematchingpairs_{stem}.log"
         params:
@@ -38,7 +38,7 @@ if CONFIG["ASSEMBLER"] == "BBMERGE":
         benchmark:
             BENCHMARKS + "/filteringR1_{stem}.log"
         shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
-            "bbmerge.sh ecct mininsert=300  mindepthseed=300 mindepthextend=200 extend2=20 iterations=5 maxstrict=t removedeadends removebubbles  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+            "bbmerge.sh  mininsert=300  verystrict=t  removedeadends removebubbles rem k=62 extend2=100 ecct  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
                     " in2={input[1]} " + 
                     " threads={threads} " +
                     "-Xmx{params.m}g &> {log}"
@@ -76,7 +76,7 @@ rule match_pairs_after_filtering:
 
 
 
-rule detect_16S_by_hmm:
+rule detect_16S_by_hmm_fastq:
     input:
         tmp + "/{stem}_R1_001filtered.fastq.gz"
     output:
@@ -89,6 +89,19 @@ rule detect_16S_by_hmm:
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( seqkit fq2fa  {input})"
 
+rule detect_16S_by_hmm_fasta:
+    input:
+        tmp + "/{stem}.fasta"
+    output:
+        tmp + "/{stem}_16s_nhmmer_res.csv"
+    params:
+        hmm = CONFIG["16S"]["hmm"]["model"],
+        e = CONFIG["16S"]["hmm"]["e"]
+    threads: 
+        THREADS
+    shell:
+        "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( cat {input})"
+
 
 
 rule filterout_r1primer_sequence_having_reads_on16S:
@@ -96,7 +109,8 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         tmp + "/{stem}_R1_001filtered.fastq.gz",
         tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv"
     output:
-        temp(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz")
+        temp(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz"),
+        LOGS+"/{stem}_on_target.txt"
     params:
         ts =  CONFIG["16S"]["hmm"]["ts"],
         te =  CONFIG["16S"]["hmm"]["te"],
@@ -109,7 +123,7 @@ rule filterout_r1primer_sequence_having_reads_on16S:
     benchmark:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
-        "seqkit grep -f <(julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length})  {input[0]} | gzip -9  > {output[0]}  " 
+        "seqkit grep -f <(julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -l {output[1]})  {input[0]} | gzip -9  > {output[0]}  " 
 
 
 
@@ -192,7 +206,7 @@ rule filterout_r2primer_sequence_having_reads:
         LOGS + "/discardingr2seq_{stem}.log"
     params:
         ref =       CONFIG["PRIMERS"]["R1"],
-        k =         12,
+        k =         31,
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -265,13 +279,13 @@ rule filter_primer_sequence_having_reads: # discarding R2 primer having reads
 
 rule merge_reads:
     input:
-        tmp + "/{stem}_R1_001filtered16s.fastq.gz",
-        tmp + "/{stem}_R2_001filtered16s.fastq.gz"
+        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
+        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
     output:
         LOGS + "/BBDUK/{stem}_mering_reads.log",
-        temp(tmp + "/{stem}_R1_001unmerged.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001unmerged.fastq.gz"),
-        temp(tmp + "/{stem}_001merged.fastq.gz"),
+        tmp + "/{stem}_R1_001filtered_repaired_unmerged.fastq.gz",
+        tmp + "/{stem}_R2_001filtered_repaired_unmerged.fastq.gz",
+        tmp + "/{stem}_001filtered_repaired_merged.fastq.gz",
     params:
         m =         MEMORY_JAVA
     threads:
@@ -332,3 +346,209 @@ rule map_filtered_reads_on_ref:
     shell:
         "bwa mem {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
     
+rule filter_rRNA_contigs:
+    input:
+        contigs = tmp + "/{stem}_contigs_clustered.fasta",
+        detected_rRNA = tmp + "/{stem}_contigs_clustered_16s_nhmmer_res.csv"
+    output:
+        tmp + "/{stem}_contigs_clustered_16s.fasta"
+    shell:
+        ''' seqkit grep -f <(cat  {input.detected_rRNA} | grep -v "#" | cut -f1 -d" ") {input.contigs} > {output} '''
+
+rule create_bwa_index:
+    input:
+        tmp + "/{stem}_contigs_clustered_16s.fasta"
+    output:
+        tmp + "/{stem}_contigs_clustered_16s.fasta.sa"
+    shell:
+        "bwa index {input}"
+
+rule map_reads_on_contigs:
+    input:
+        tmp + "/{stem}_contigs_clustered_16s.fasta",
+        tmp + "/{stem}_contigs_clustered_16s.fasta.sa",
+        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
+        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+    output:
+        temp(tmp + "/{stem}_reads_on_contigs.bam")
+    threads: CONFIG["MACHINE"]["threads_bwa"]
+    shell:
+        "bwa mem -t {threads} {input[0]} {input[2]} {input[3]} | samtools view -b | samtools sort -n  > {output} "
+
+rule quantify_contigs:
+    input:
+        tmp + "/{stem}_reads_on_contigs.bam",
+        tmp + "/{stem}_contigs_clustered_16s.fasta"
+    threads: CONFIG["MACHINE"]["threads_salmon"]
+    params:
+        out_dir = tmp + "/salmon_{stem}"
+    output:
+        tmp + "/{stem}_contigs_clustered_16s_salmon.csv"
+    shell:
+        "salmon quant --meta -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}  --posBias ; mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}"
+
+rule run_kraken:
+    input: 
+        tmp + "/{stem}_contigs_clustered_16s.fasta"
+    output:
+        tmp + "/{stem}_contigs_clustered_16s_kraken.txt",
+        tmp + "/{stem}_contigs_clustered_16s_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+
+rule run_bracken:
+    input:
+        tmp + "/{stem}_contigs_clustered_16s_kraken_raport.txt"
+    output:
+        tmp + "/{stem}_contigs_clustered_16s_bracken_raport.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "dependencies/Bracken/bracken -l G -d {params.db} -i {input} -o {output}"
+
+rule run_kraken_on_reads:
+    input: 
+        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
+        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+    output:
+        tmp + "/{stem}_reads_kraken.txt",
+        tmp + "/{stem}_reads_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --paired    --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+
+rule run_bracken_on_reads:
+    input:
+        tmp + "/{stem}_reads_kraken_raport.txt"
+    output:
+        tmp + "/{stem}_reads_bracken_raport.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "dependencies/Bracken/bracken -l G -d {params.db} -i {input} -o {output}"
+
+#-------------------------------------------------optional control rules ----------------------------------------------#
+rule merge_trimmed_reads:
+    input:
+        tmp + "/{stem}_R1_001subs.fastq.gz",
+        tmp + "/{stem}_R2_001subs.fastq.gz"
+    output:
+        tmp + "/{stem}_subs_merged.fasta",
+        tmp + "/{stem}_R1_subs_unmerg.fastq.gz",
+        tmp + "/{stem}_R2_subs_unmerg.fastq.gz"
+    log:
+        LOGS + "/mergingpairs_{stem}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "bbmerge.sh  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+                " in2={input[1]} " + 
+                " threads={threads} " +
+                " outu1={output[1]} " +
+                " outu2={output[2]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule fuse_unmerged_reads:
+    input:
+        tmp + "/{stem}_R1_subs_unmerg.fastq.gz",
+        tmp + "/{stem}_R2_subs_unmerg.fastq.gz"
+    output:
+        tmp + "/{stem}_subs_fused.fasta"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "fuse.sh  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+                " in2={input[1]} " + 
+                " fusepairs=t " +
+                "-Xmx{params.m}g "
+
+rule merge_fused_and_merged:
+    input:
+        tmp + "/{stem}_subs_fused.fasta",
+        tmp + "/{stem}_subs_merged.fasta"
+    output:
+        tmp + "/{stem}_subs_amplicons.fasta"
+    shell:
+        "cat {input[0]} > {output} ; " #+
+        #" cat {input[1]} >> {output}"
+
+
+rule mark_primer_sequences:
+    input:
+        tmp + "/{stem}_subs_amplicons.fasta"
+    output:
+        tmp + "/{stem}_subs_amplicons_markedprimers.fasta"
+    params:
+        ref =       CONFIG["PRIMERS"]["R1"],
+        k =         15,
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+                "ref={params.ref} threads={threads} " +
+                " k={params.k} hammingdistance=1   " +
+                " threads={threads} " +
+                "kmask=N  overwrite=t " +
+                "-Xmx{params.m}g "
+
+rule mark_rRNA_seq:
+    input:
+        tmp + "/{stem}_subs_amplicons_markedprimers.fasta"
+    output:
+        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA.fasta"
+    params:
+        ref =       CONFIG["rRNA"],
+        k =         40,
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+                "ref={params.ref} threads={threads} " +
+                " k={params.k} hammingdistance=1   " +
+                " threads={threads} " +
+                "kmask=lc  overwrite=t " +
+                "-Xmx{params.m}g "
+
+
+rule extract_rRNA_seq_having:
+    input:
+        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA.fasta"
+    output:
+        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA_onlyrRNAhaving.fasta"
+    params:
+        ref =       CONFIG["rRNA"],
+        k =         40,
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} outm={output[0]} " +
+                "ref={params.ref} threads={threads} " +
+                " k={params.k} hammingdistance=1   " +
+                " threads={threads} " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
+

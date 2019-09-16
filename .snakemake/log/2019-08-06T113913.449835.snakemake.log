@@ -1,4 +1,0 @@
-CreateRuleException in line 57 of /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk:
-The name filteron_R1_sequence is already used by another rule
-  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 20, in <module>
-  File "/media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk", line 57, in <module>

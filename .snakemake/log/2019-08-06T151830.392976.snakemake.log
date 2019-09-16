@@ -1,3 +1,0 @@
-WorkflowError in line 20 of /media/root/ocean/projects/ga/bracken_ribo_count/Snakefile:
-Failed to open /media/root/ocean/projects/ga/bracken_ribo_count/snakefiles/4_0_assembly.smk.
-  File "/media/root/ocean/projects/ga/bracken_ribo_count/Snakefile", line 20, in <module>
