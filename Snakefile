@@ -32,16 +32,16 @@ wlogger.info(f'Output direcoty: [{CONFIG["OUT-DIR"]}]')
 
 rule all:
     input:
-        #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        #expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz", stem=STEMS),
+        expand(OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz", stem=STEMS),
+        expand(tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv", stem=STEMS),
+        MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
+        expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
         expand(tmp + "/{stem}_contigs_size_filtered_clustered_rRNA.gtf", stem=STEMS),
-        #expand(tmp + "/{stem}_R1_001filtered_repaired.fastq.gz", stem=STEMS),
-        #expand(tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz", stem=STEMS),
-        #expand(tmp + "/{stem}_R1_001filtered_withr1primer.fastq.gz", stem=STEMS),
-        expand(tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv", stem=STEMS),
-        expand(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz", stem=STEMS),
-        expand(tmp + "/{stem}_contigs_size_filtered_clustered_aligned.bam", stem=STEMS),
-        expand(tmp + "/{stem}_aligned_reads.bam", stem=STEMS),
+        expand(tmp + "/{stem}_reads_on_contigs.bam", stem=STEMS),
+        expand(tmp + "/{stem}_contigs_clustered_16s_salmon.csv", stem=STEMS),
+        expand(tmp + "/{stem}_contigs_clustered_16s_kraken.txt", stem=STEMS),
+        expand(tmp + "/{stem}_contigs_clustered_16s_bracken_raport.txt", stem=STEMS),
 
 
 

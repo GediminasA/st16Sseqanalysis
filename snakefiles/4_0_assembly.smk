@@ -4,8 +4,8 @@
 if CONFIG["ASSEMBLER"] == "SPADES":
     rule assemble:
         input:
-            tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-            tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+            OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+            OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
             tmp + "/{stem}_contigs_bbmerge.fasta"
             #tmp + "/{stem}_001merged.fastq.gz"
         output:
@@ -24,8 +24,8 @@ if CONFIG["ASSEMBLER"] == "SPADES":
 
     rule assemble_bbmerge:
         input:
-            tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-            tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+            OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+            OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
             #tmp + "/{stem}_001merged.fastq.gz"
         output:
             tmp + "/{stem}_contigs_bbmerge.fasta"
@@ -58,8 +58,8 @@ rule match_pairs_after_filtering:
         tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz",
         tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz"
     output:
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     log:
         LOGS + "/rematchingpairs_{stem}.log"
     params:
@@ -82,8 +82,8 @@ rule detect_16S_by_hmm_fastq:
     output:
         tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv"
     params:
-        hmm = CONFIG["16S"]["hmm"]["model"],
-        e = CONFIG["16S"]["hmm"]["e"]
+        hmm = CONFIG["16S"]["hmm_reads"]["model"],
+        e = CONFIG["16S"]["hmm_reads"]["e"]
     threads: 
         THREADS
     shell:
@@ -95,12 +95,50 @@ rule detect_16S_by_hmm_fasta:
     output:
         tmp + "/{stem}_16s_nhmmer_res.csv"
     params:
-        hmm = CONFIG["16S"]["hmm"]["model"],
-        e = CONFIG["16S"]["hmm"]["e"]
+        hmm = CONFIG["16S"]["hmm_contigs"]["model"],
+        e = CONFIG["16S"]["hmm_contigs"]["e"]
     threads: 
         THREADS
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( cat {input})"
+        
+rule detect_16S_by_hmm_in_R2_fastq:
+    input:
+       OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+    output:
+       tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv"
+    params:
+        hmm = CONFIG["16S"]["hmm_reads"]["model"],
+        e = CONFIG["16S"]["hmm_reads"]["e"]
+    threads: 
+        THREADS
+    shell:
+        "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( seqkit fq2fa  {input})"
+
+rule filterout_r2primer_repaired_sequence_not_corossing16S:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv"
+    output:
+        OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz"
+    params:
+        ts =  CONFIG["16S"]["hmm_reads"]["ts"],
+        te =  CONFIG["16S"]["hmm_reads"]["te"],
+        rs =  CONFIG["16S"]["hmm_reads"]["rs"],
+        re =  CONFIG["16S"]["hmm_reads"]["re"],
+        length =  CONFIG["16S"]["hmm_reads"]["max_R2_fraction"] 
+
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR2_16S_{stem}.log"
+    shell:
+        "seqkit grep -v  -f <(julia scripts/extract_not_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  " 
+
+
+
+  
+
 
 
 
@@ -110,20 +148,20 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv"
     output:
         temp(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz"),
-        LOGS+"/{stem}_on_target.txt"
+        #LOGS+"/{stem}_on_target.txt"
     params:
-        ts =  CONFIG["16S"]["hmm"]["ts"],
-        te =  CONFIG["16S"]["hmm"]["te"],
-        rs =  CONFIG["16S"]["hmm"]["rs"],
-        re =  CONFIG["16S"]["hmm"]["re"],
-        length =  CONFIG["16S"]["hmm"]["length"] 
+        ts =  CONFIG["16S"]["hmm_reads"]["ts"],
+        te =  CONFIG["16S"]["hmm_reads"]["te"],
+        rs =  CONFIG["16S"]["hmm_reads"]["rs"],
+        re =  CONFIG["16S"]["hmm_reads"]["re"],
+        length =  CONFIG["16S"]["hmm_reads"]["length"] 
 
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
-        "seqkit grep -f <(julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -l {output[1]})  {input[0]} | gzip -9  > {output[0]}  " 
+        "seqkit grep -f <(julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  " 
 
 
 
@@ -170,7 +208,7 @@ rule retrim_R2_adapters_from_primers:
         k =         CONFIG["BBDUK"]["k"],
         mink =      CONFIG["BBDUK"]["mink"],
         hdist =     CONFIG["BBDUK"]["hdist"],
-        minlength = CONFIG["BBDUK"]["minlength"],
+        minlength = 75,
         qtrim =     CONFIG["BBDUK"]["qtrim"],
         trimq =     CONFIG["BBDUK"]["trimq"],
         add =       CONFIG["BBDUK"]["additional_params"],
@@ -279,8 +317,8 @@ rule filter_primer_sequence_having_reads: # discarding R2 primer having reads
 
 rule merge_reads:
     input:
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
         LOGS + "/BBDUK/{stem}_mering_reads.log",
         tmp + "/{stem}_R1_001filtered_repaired_unmerged.fastq.gz",
@@ -337,8 +375,8 @@ rule map_contigs_on_ref:
 
 rule map_filtered_reads_on_ref:
     input:
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
         temp(tmp + "/{stem}_aligned_reads.bam")
     params:
@@ -350,10 +388,19 @@ rule filter_rRNA_contigs:
     input:
         contigs = tmp + "/{stem}_contigs_clustered.fasta",
         detected_rRNA = tmp + "/{stem}_contigs_clustered_16s_nhmmer_res.csv"
+    params:
+        ts =  CONFIG["16S"]["hmm_contigs"]["ts"],
+        te =  CONFIG["16S"]["hmm_contigs"]["te"],
+        rs =  CONFIG["16S"]["hmm_contigs"]["rs"],
+        re =  CONFIG["16S"]["hmm_contigs"]["re"],
+        length =  CONFIG["16S"]["hmm_contigs"]["length"] 
+    threads:
+        CONFIG["BBDUK"]["threads"]
     output:
-        tmp + "/{stem}_contigs_clustered_16s.fasta"
+        tmp + "/{stem}_contigs_clustered_16s.fasta",
+        tmp + "/{stem}_contigs_clustered_16s_motifs.fasta"
     shell:
-        ''' seqkit grep -f <(cat  {input.detected_rRNA} | grep -v "#" | cut -f1 -d" ") {input.contigs} > {output} '''
+        "julia scripts/extract_properly_matching_rRNA_names_contigs.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -f  {input[0]} -o {output[0]} -g {output[1]}  " 
 
 rule create_bwa_index:
     input:
@@ -367,8 +414,8 @@ rule map_reads_on_contigs:
     input:
         tmp + "/{stem}_contigs_clustered_16s.fasta",
         tmp + "/{stem}_contigs_clustered_16s.fasta.sa",
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
         temp(tmp + "/{stem}_reads_on_contigs.bam")
     threads: CONFIG["MACHINE"]["threads_bwa"]
@@ -412,8 +459,8 @@ rule run_bracken:
 
 rule run_kraken_on_reads:
     input: 
-        tmp + "/{stem}_R1_001filtered_repaired.fastq.gz",
-        tmp + "/{stem}_R2_001filtered_repaired.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
         tmp + "/{stem}_reads_kraken.txt",
         tmp + "/{stem}_reads_kraken_raport.txt"

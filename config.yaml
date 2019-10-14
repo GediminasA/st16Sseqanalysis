@@ -8,13 +8,13 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-INPUT-DIR: /media/root/ngs_nas3/2019_08_19_16S_metagenomai/190813_M02432_0357_000000000-CK3PC/Data/Intensities/BaseCalls
-SAMPLES: Equimolar-mix-55-Ecoli_S53 
+INPUT-DIR: /media/root/ngs_nas3/2019_08_19_16S_metagenomai/190813_M02432_0357_000000000-CK3PC/Data/Intensities/BaseCalls/sub/merged
+SAMPLES: MergedColi 
 #INPUT-DIR: /media/root/ngs_nas3/2019_06_18_microbiomes_std  
 #SAMPLES: ODN-E-coli-1_S1 
 LANE-REGEX: "L\\d\\d\\d_"
-TMP-DIR: tmp_coli
-OUT-DIR: output_coli
+TMP-DIR: tmp_colimerged
+OUT-DIR: output_colimerged
 SCRATCH: tmp_coli
 BENCH-DIR: bench_coli
 BENCHMARKS: benchmarks
@@ -22,6 +22,7 @@ BENCHMARKS: benchmarks
 #############################
 # Primer sequences fltering #
 #############################
+rRNA: datasets/bbmap/rRNA_coli.fa 
 PRIMERS:
     R1: datasets/bbmap/R1_rev.fasta #sequences that must occure in R1
     R1_k: 15 #minimum lenth of substring to match
@@ -41,7 +42,7 @@ ASSEMBLER: SPADES  #SPADES # BBMERGE
         te: 645
         rs: 1
         re: 100
-        length: 40 #match length in read
+        length: 30 #match length in read
 
 min_contig_length: 300
 max_contig_length: 12000000000
@@ -58,6 +59,9 @@ MACHINE:
     threads_barnap: 12
     threads_cdhit: 12
     threads_nhmmer: 12
+    threads_bwa: 12
+    threads_salmon: 12
+    threads_kraken: 12
 
 ##############
 # References #
@@ -116,3 +120,4 @@ ANNOTATE-TS:
     strandedness:                  # List your SAMPLES and provide strandedness.
         HBR_100_Collibri_chr21small_A: "+" # [+] If R1 read is the same as a gene sequence: +; If R2 read is the same as a gene sequence: -;
     additional_params: "--cluster" # ["--cluster --verbose"]
+KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/20190424_standard

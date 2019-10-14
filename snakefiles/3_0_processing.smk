@@ -49,8 +49,8 @@ if CONFIG["SUBSAMPLING"]["subsample_to"]:
             tmp + "/{stem}_R1_001Trimmed.fastq.gz",
             tmp + "/{stem}_R2_001Trimmed.fastq.gz"
         output:
-            temp(tmp + "/{stem}_R1_001subs.fastq.gz"),
-            temp(tmp + "/{stem}_R2_001subs.fastq.gz")
+            tmp + "/{stem}_R1_001subs.fastq.gz",
+            tmp + "/{stem}_R2_001subs.fastq.gz"
         log:
             LOGS + "/SEQTK/R1/{stem}.log",
             LOGS + "/SEQTK/R2/{stem}.log"
