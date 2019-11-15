@@ -1,10 +1,7 @@
 using ArgParse
 using CSV
 using DataFrames
-using DataStructures
 using BioSequences
-using CodecZlib
-
 
 function parse_commandline()
     s = ArgParseSettings()
@@ -23,24 +20,18 @@ function parse_commandline()
             arg_type = Int 
             required = true 
         "--input","-i"
-            help = "Input file"
+            help = "Input file hmmscan"
             required = true 
-        "--log", "-l"
-            help = "Log file to write reads on target"
-            arg_type = String
+        "--fasta","-f"
+            help = "Input file hmmscan"
             required = true 
-        "--names", "-n"
-            help = "Write out names of reads "
-            arg_type = String
+        "--matching-fasta","-o"
+            help = "Input file hmmscan"
             required = true 
-        "--fastqin", "-q"
-            help = "FASTQ.GZi input to filter out reads"
-            arg_type = String
+        "--matching-motifs","-g"
+            help = "Input file hmmscan"
             required = true 
-        "--fastqout", "-o"
-            help = "FATQ.GZ output to filter out reads"
-            arg_type = String
-            required = true 
+
         # "--flag1"
         #     help = "an option without argument, i.e. a flag"
         #     action = :store_true
@@ -52,10 +43,27 @@ function parse_commandline()
     return parse_args(s)
 end
 
+function read_fasta(inf::String)::Dict{String,String}
+    reader = open(FASTA.Reader, inf)
+    record = FASTA.Record()
+    out = Dict{String,String}()
+    while !eof(reader)
+        read!(reader, record)
+        seq::String = FASTA.sequence(record)   
+        name = FASTA.identifier(record)
+        out[name] = seq 
+    end 
+    return(out)
+end
+
 function main()
     parsed_args = parse_commandline()
-    logf = open(parsed_args["log"],"w")
-    namesf = open(parsed_args["names"],"w")
+    #output
+    out_s = open(parsed_args["matching-fasta"],"w")
+    out_m = open(parsed_args["matching-motifs"],"w")
+    #read fasta
+
+    seqs = read_fasta(parsed_args["fasta"])
     # get read limit
     r_data= split(parsed_args["16sr"],":")
     r_star = parse(Int64,r_data[1])
@@ -70,9 +78,8 @@ function main()
     r_star, r_end = sort([r_star,r_end])
 
     minl = parsed_args["min"]
+    outputed = Array{String,1}()
     println(stderr,"Filtering out matches in template between $t_star:$t_end")
-    chosen_reads = Set{String}() 
-    # read the hmm output 
     open(parsed_args["input"]) do f
             line = 1
             while !eof(f)
@@ -84,52 +91,31 @@ function main()
                     te = parse(Int64,parts[6])
                     rs = parse(Int64,parts[9])
                     re = parse(Int64,parts[10])
+                    rlen = parse(Int64,parts[11])
+                    strand = parts[12] 
                     ts, te = sort([ts,te])
                     rs, re = sort([rs,re])
-                    #println("$r_star $r_end $t_star $t_end   real  $rs $re  $ts $te ")
-                    if ( (re-rs+1) >= minl ) && (ts >= t_star) && (ts <= t_end) && (te >= t_star) && (te <= t_end) && (rs >= r_star) && (rs <= r_end) && (re >= r_star) && (re <= r_end)
-                        println(namesf,rname)
-                       push!(chosen_reads,rname)
+                    if strand == "+"
+                        rs, re = sort(([rs,re] .- rlen .- 1) * -1 )
+                        ss = reverse_complement(BioSequence{DNAAlphabet{4}}(seqs[rname]))
+                        seqs[rname] = string(ss)
+                    end
+                    if ( (re-rs+1) >= minl ) && (ts >= t_star) && (ts <= t_end) && (te >= t_star) && (te <= t_end) && (rs >= r_star) && (rs <= r_end) && (re >= r_star) && (re <= r_end) && !(rname in outputed)
+                        push!(outputed,rname)
+                        motiv_seq = seqs[rname][rs:re]
+                        seq = seqs[rname]
+                        println(out_m,">$rname\n$motiv_seq\n")
+                        println(out_s,">$rname\n$seq\n")
+
+                        println(stdout,rname)
                     end
                 end
                 line += 1
             end
     end
-    close(namesf)
-    ct_t = length(chosen_reads)
-    ct_p = 0
-    ct_all = 0
-    #read in fastq and filter
-    fastq_file = parsed_args["fastqin"] 
-    fastq_fileo = parsed_args["fastqout"] 
-    reader = FASTQ.Reader(GzipDecompressorStream(open(fastq_file)))
-    writer = FASTQ.Writer(GzipCompressorStream(open(fastq_fileo,"w")))
-    println("Choosing reads with proper 16S fragments in file: $fastq_file")
-    record = FASTQ.Record()
-    while !eof(reader)
-        read!(reader, record)
-        ct_all += 1
-        #println(record)
-        id = FASTQ.identifier(record)
-        if id in chosen_reads 
-            ct_p += 1
-            write(writer,record) 
-            delete!(chosen_reads,id)
-        end
-        ## Do something.
-    end
-    if ct_p != ct_t
-        println(stderr, "Something wrong in files: $ct_t in csv and $ct_p in the fastq filr")
-    end
-    frac = ct_p/ct_all
-    println(stderr,"On 'target' $frac reads")
-    println(logf,"$frac")
-    close(writer)
-    close(logf)
-    close(namesf)
-
-
-
+    close(out_s)
+    close(out_m)
+    # read the hmm output 
     
 end
 

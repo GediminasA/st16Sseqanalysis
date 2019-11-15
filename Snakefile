@@ -11,7 +11,6 @@ from shutil import copyfile
 
 
 # ------------------------------ Include Snakefiles ------------------------- #
-
 include: "./snakefiles/0_0_utilities.smk"
 include: "./snakefiles/0_1_configuration.smk"
 include: "./snakefiles/1_0_download.smk"
@@ -34,14 +33,25 @@ rule all:
     input:
         expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz", stem=STEMS),
         expand(OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz", stem=STEMS),
-        expand(tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv", stem=STEMS),
-        MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
-        expand(tmp + "/{stem}_contigs_size_filtered_clustered_rRNA.gtf", stem=STEMS),
-        expand(tmp + "/{stem}_reads_on_contigs.bam", stem=STEMS),
-        expand(tmp + "/{stem}_contigs_clustered_16s_salmon.csv", stem=STEMS),
-        expand(tmp + "/{stem}_contigs_clustered_16s_kraken.txt", stem=STEMS),
-        expand(tmp + "/{stem}_contigs_clustered_16s_bracken_raport.txt", stem=STEMS),
+        expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
+        #expand(tmp + "/{stem}_mergedreads_bracken_raport.txt", stem=STEMS),
+        #expand(tmp + "/{stem}_pairedreads_bracken_raport.txt", stem=STEMS),
+       # expand(tmp + "/{stem}_contigs_on_reference_salmon.csv", stem=STEMS),
+        #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
+        #tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
+        #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
+
+        #expand(tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv", stem=STEMS),
+        #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
+        #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
+        #expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
+        #expand(tmp + "/{stem}_contigs_size_filtered_clustered_rRNA.gtf", stem=STEMS),
+        #expand(tmp + "/{stem}_reads_on_contigs.bam", stem=STEMS),
+        #expand(tmp + "/{stem}_reads_on_contigs.bam", stem=STEMS),
+        #expand(tmp + "/{stem}_contigs_clustered_16s_salmon.csv", stem=STEMS),
+        #expand(tmp + "/{stem}_contigs_on_ref.bam", stem=STEMS),
+        #expand(tmp + "/{stem}_contigs_size_filtered_clustered_16s_kraken.txt", stem=STEMS),
+        #expand(tmp + "/{stem}_contigs_size_filtered_clustered_16s_bracken_raport.txt", stem=STEMS),
 
 
 
