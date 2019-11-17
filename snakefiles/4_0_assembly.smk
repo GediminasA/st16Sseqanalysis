@@ -16,7 +16,7 @@ rule trim_first_unacurate_reaqds_from_R2:
     output:
         tmp + "/16S_amplicons/{stem}_left_reads.fasta",
     params:
-        add =       " ftl=5 ",
+        add =       " ftl=20 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -36,17 +36,18 @@ rule tadpoleR2:
         tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
     params:
     shell:
-        "tadpole.sh  k=100  mincountseed=1 mincountextend=1  mode=extend extendright=1000 extendleft=1000  in={input[0]} out={output[0]}"
+        "tadpole.sh  k=127  mincountseed=1 mincountextend=1  mode=contig   in={input[0]} out={output[0]}"
         #"tadpole.sh  k=127 mincountseed=1 mincountextend=1   in={input[0]} out={output[0]}"
 
 rule assemble_r2_clustered:
     input:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size500_woident_swarm.fasta",
-        #tmp + "/{stem}_001merged.fastq.gz"
+        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min.fasta",
+        tmp + "/16S_amplicons/{stem}_left_reads.fasta",
     output:
         tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb.fasta",
     shell:
-        "tadpole.sh  k=200  mincountseed=1 mincountextend=1  mode=extend extendright=1000 extendleft=1000  in={input[0]} out={output[0]}"
+        "tadpole.sh  k=200 mode=contig  mincountseed=1 mincountextend=1  mode=extend extendright=300  in={input[1]}  out={output[0]}"
+        #"tadpole.sh  k=100 mode=contig  mincountseed=1 mincountextend=1  mode=extend extendright=1000  in={input[1]},{input[0]}  out={output[0]}"
 
 
 
@@ -187,21 +188,31 @@ rule size:
     shell:
         "bbduk.sh in={input} out={output} minlength=700  forcetrimright=699 "
 
-rule size500:
+rule size4tad:
     input:
         "{stem}.fasta",
     output:
-        "{stem}_size500.fasta",
+        "{stem}_size{len}min.fasta",
+    params:
+        l="{len}"
     shell:
-        "bbduk.sh in={input} out={output} minlength=500 "
+        "bbduk.sh in={input} out={output} minlength={params.l} "
 
-rule dedupe:
+rule correctbb:
     input:
         "{stem}.fasta",
     output:
         "{stem}_dedupe.fasta",
     shell:
-        "dedupe.sh in={input} outbest={output}  "
+        "dedupe.sh in={input} out={output}  "
+
+rule dedupe:
+    input:
+        "{stem}.fasta",
+    output:
+        "{stem}_correctbb.fasta",
+    shell:
+        "tadpole.sh mode=correct  in={input} out={output}  "
 
 rule rmidenti:
     input:
@@ -250,7 +261,8 @@ rule get_final_contigs:
         #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades_size400.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb_cluster.fasta",
+        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min_cluster.fasta",
+        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb_size400min_cluster.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_bbduk_size_vsearchcl.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_woN_size_woident_swarm_wosinglets_unoise.fasta",
     output:
