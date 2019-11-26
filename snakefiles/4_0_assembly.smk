@@ -36,17 +36,16 @@ rule tadpoleR2:
         tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
     params:
     shell:
-        "tadpole.sh  k=127  mincountseed=1 mincountextend=1  mode=contig   in={input[0]} out={output[0]}"
+        "tadpole.sh  k=200  mincountseed=1 mincountextend=1  mode=extend extendright=250   in={input[0]} out={output[0]}"
         #"tadpole.sh  k=127 mincountseed=1 mincountextend=1   in={input[0]} out={output[0]}"
 
 rule assemble_r2_clustered:
     input:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads.fasta",
+        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
     output:
         tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb.fasta",
     shell:
-        "tadpole.sh  k=200 mode=contig  mincountseed=1 mincountextend=1  mode=extend extendright=300  in={input[1]}  out={output[0]}"
+        "tadpole.sh  k=180  mincountseed=1 mincountextend=1    in={input[0]} out={output[0]}"
         #"tadpole.sh  k=100 mode=contig  mincountseed=1 mincountextend=1  mode=extend extendright=1000  in={input[1]},{input[0]}  out={output[0]}"
 
 
@@ -262,7 +261,8 @@ rule get_final_contigs:
         #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min_cluster.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb_size400min_cluster.fasta",
+        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size400min_cluster.fasta",
+        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb_size350min.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_bbduk_size_vsearchcl.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_woN_size_woident_swarm_wosinglets_unoise.fasta",
     output:
@@ -878,7 +878,7 @@ rule filter_long_matches:
     output:
         "{stem}_filtlen.bam"
     shell:
-        "julia scripts/filter_bam_by_tlen.jl  -i {input} -o {output} -l 400; samtools index {output} "
+        "julia scripts/filter_bam_by_tlen.jl  -i {input} -o {output} -l 350; samtools index {output} "
 
 rule quantify_contigs_on_reference:
     input:
@@ -897,14 +897,27 @@ rule map_filtered_reads_on_ref:
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
-        temp(tmp + "/{stem}_aligned_reads.bam")
+        tmp + "/{stem}_aligned_reads.bam"
     params:
         ref = CONFIG["ref"]
     shell:
         "bwa mem -t {threads} {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
     
+rule sortbyname:
+    input: 
+        "{stem}.bam"
+    output:
+        "{stem}_sortedbyname.bam"
+    shell:
+        "samtools sort -n {input} -o {output}"
 
-
+rule analyse_insert_size:
+    input:
+        tmp + "/{stem}_aligned_reads_sortedbyname.bam"
+    output:
+        OUT + "/INSERT_SIZE/{stem}.csv"
+    shell:
+        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output}"
 
 rule filter_rRNA_contigs:
     input:
