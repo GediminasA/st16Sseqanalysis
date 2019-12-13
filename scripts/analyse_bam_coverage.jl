@@ -20,6 +20,10 @@ function parse_commandline()
             help = "Data "
             arg_type = String
             required = true 
+        "--stem", "-s"
+            help = "Sample id for output - stem"
+            arg_type = String
+            required = true 
     end
 
     return parse_args(s)
@@ -95,6 +99,7 @@ function main()
     parsed_args = parse_commandline()
     println(parsed_args["inbam"])
     out_csv = parsed_args["outcsv"]
+    stem = parsed_args["stem"]
     out_csv_f = open(out_csv,"w")
     reader = open(BAM.Reader,parsed_args["inbam"])#,index = parsed_args["inbam"]*".bai")
     h = BAM.header(reader)
@@ -111,22 +116,24 @@ function main()
     current_read_name = ""
     first = true
     for record in reader
-        name = BAM.tempname(record)
-        flag = BAM.flag(record)
-        if name != current_read_name 
-            if !first
-                current_read_name = name
-                analyse_pairs!(r1,r2,ct_fl,l_fl)
-            else
-                first = false
+            flag = BAM.flag(record)
+        if flag&4 != 4 
+            name = BAM.tempname(record)
+            if name != current_read_name 
+                if !first
+                    current_read_name = name
+                    analyse_pairs!(r1,r2,ct_fl,l_fl)
+                else
+                    first = false
+                end
+                r1=Array{BAM.Record,1}()
+                r2=Array{BAM.Record,1}()
             end
-            r1=Array{BAM.Record,1}()
-            r2=Array{BAM.Record,1}()
-        end
-        if flag&64 == 64 
-            push!(r1,record)
-        else
-            push!(r2,record)
+            if flag&64 == 64 
+                push!(r1,record)
+            else
+                push!(r2,record)
+            end
         end
     end
     
@@ -153,7 +160,7 @@ function main()
         #     e = last(aln.anchors).refpos
         #     l = abs(s-e)+1
         # end 
-    println(out_csv_f,"Species;Starting_letter;Insert_size")
+    println("Species;Starting_letter;Insert_size;Sample")
     # for (ref,fl) in keys(ct_fl)
     #     for l in keys(ct_fl[(ref,fl)])
     #         lct = ct_fl[(ref,fl)][l]
@@ -164,7 +171,7 @@ function main()
         lct = median(l_fl[(ref,fl)])
         println("$ref $fl $lct")
         for l in l_fl[(ref,fl)]
-            println(out_csv_f,"$ref;$fl;$l")
+            println(out_csv_f,"$ref;$fl;$l;$stem")
         end
     end
     close(out_csv_f)

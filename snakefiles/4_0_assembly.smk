@@ -422,7 +422,7 @@ rule merge_16S_reads:
     benchmark:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
-        "bbmerge.sh maxstrict=t   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+        "bbmerge.sh maxstrict=t mininsert=200   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
                 " in2={input[1]} " + 
                 " threads={threads} " +
                 " outu1={output[1]} " +
@@ -916,8 +916,22 @@ rule analyse_insert_size:
         tmp + "/{stem}_aligned_reads_sortedbyname.bam"
     output:
         OUT + "/INSERT_SIZE/{stem}.csv"
+    params:
+        stem = "{stem}"
     shell:
-        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output}"
+        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output} -s {params.stem}"
+
+rule merge_insert_sizes:
+    input:
+        expand(OUT + "/INSERT_SIZE/{stem}.csv", stem=STEMS)
+    output:
+        OUT + "/INSERT_SIZE/all.csv"
+    params: 
+        header="Species;Starting_letter;Insert_size;Sample"
+    shell:
+        '''echo "{params.header}" > {output}; cat {input} >> {output}'''
+
+
 
 rule filter_rRNA_contigs:
     input:
