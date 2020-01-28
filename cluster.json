@@ -1,17 +1,17 @@
 {
     "__default__" :
     {
-        "name"      : "{rule}.{wildcards}",
-        "error"     : "logs/cluster/{rule}_{wildcards}.err",
-        "output"    : "logs/cluster/{rule}_{wildcards}.out",
+        "name"      : "{rule}",
+        "error"     : "logs/cluster/{rule}.err",
+        "output"    : "logs/cluster/{rule}.out",
         "priority"  : "0"
     },
 
-    "sortByName" :
+    "sortbyname:" :
     {
-        "name"      : "{rule}.{wildcards}",
-        "error"     : "logs/cluster/{rule}_{wildcards}.err",
-        "output"    : "logs/cluster/{rule}_{wildcards}.out",
+        "name"      : "{rule}",
+        "error"     : "logs/cluster/{rule}.err",
+        "output"    : "logs/cluster/{rule}.out",
         "priority"  : "-1000"
     }
 }

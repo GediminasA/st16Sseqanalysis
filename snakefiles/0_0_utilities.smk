@@ -209,3 +209,11 @@ def get_annotate_ts_strandedness(wildcards):
         if i == wildcards.stem:
             wlogger.info(f'Set strandedness: {wildcards.stem}: {CONFIG["ANNOTATE-TS"]["strandedness"][i]}')
             return CONFIG["ANNOTATE-TS"]["strandedness"][i]
+
+def chose_deduplicated_or_not(wildcards):
+    umis = CONFIG["UMI_SAMPLES"].split()
+
+    if wildcards.stem in umis:
+        return([tmp + f"/16S_having_reads/{wildcards}_L001_R1_001_matchedadedup.fastq.gz",tmp + f"/16S_having_reads/{wildcards}_L001_R2_001_matchedadedup.fastq.gz"])
+    else:
+        return([tmp + f"/16S_having_reads/{wildcards}_L001_R1_001_wodup.fastq.gz",tmp + f"/16S_having_reads/{wildcards}_L001_R2_001_wodup.fastq.gz"])

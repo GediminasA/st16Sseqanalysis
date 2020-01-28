@@ -1,4 +1,4 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # ------------------------ assembly ---------------------------------------- #
 
 def choose_err_cor(wildcards):
@@ -92,7 +92,7 @@ rule correct_reads:
     shell:
         "spades.py  --only-error-correction  " +  "  -1  {input[0]} -2  {input[1]} " +
         "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-        " mv {params.r1cor} {output[0]} ;  mv {params.r2cor} {output[1]} " 
+        " mv {params.r1cor} {output[0]} ;  mv {params.r2cor} {output[1]} "
 
 
 rule correct_contigs:
@@ -110,7 +110,7 @@ rule correct_contigs:
     shell:
         "spades.py  --only-error-correction  " +  "  -s  {input[0]} " +
         "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-        " mv {params.r1cor} {output[0]}  " 
+        " mv {params.r1cor} {output[0]}  "
 
 
 
@@ -148,7 +148,7 @@ rule trim_primersequence_from_contig:
 
 rule assemble_bbmerge:
     input:
-        choose_err_cor, 
+        choose_err_cor,
         #tmp + "/{stem}_001merged.fastq.gz"
     output:
         tmp + "/{stem}_contigs_bbmerge.fasta",
@@ -164,7 +164,7 @@ rule assemble_bbmerge:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=200 iterations=5 mindepthseed=300 mindepthextend=200
         "bbmerge.sh  ecct k=150 mininsert=400  extend2=100 extend=100 rem iterations=30  mindepthseed=1 mindepthextend=1  in={input[0]} out={output[0]} outu1={output[1]}  outu2={output[2]}  " + #ecct extend2=50 iterations=10
-                " in2={input[1]} " + 
+                " in2={input[1]} " +
                 " threads={threads} " +
                 "-Xmx{params.m}g &> {log}"
 
@@ -275,7 +275,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
     if config["SPADES"]["include"] == "bbmerge_contigs":
         rule assemble:
             input:
-                choose_err_cor, 
+                choose_err_cor,
                 tmp + "/{stem}_contigs_bbmerge_clustered.fasta"
                 #tmp + "/{stem}_001merged.fastq.gz"
             output:
@@ -291,7 +291,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 "  -k 127  -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
                 "cp {params.spades_dir}/transcripts.fasta  {output[0]}; " +
                 "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-    
+
     if config["SPADES"]["include"] == "merged_reads":
         rule custer4spades:
             input:
@@ -304,9 +304,9 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 CONFIG["MACHINE"]["threads_cdhit"]
             shell:
                 "cd-hit-est -T {threads} -c {params.clustering_frac} -i {input} -o {output} "
-        
+
         rule get_name_merged:
-            input: 
+            input:
                 OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz"
             output:
                 tmp + "/16S_having_reads/{stem}_merged.names"
@@ -321,9 +321,9 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 r1 = tmp + "/16S_having_reads/{stem}_L001_R1_001_longins.fastq.gz",
                 r2 = tmp + "/16S_having_reads/{stem}_L001_R2_001_longins.fastq.gz",
             shell:
-                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   + 
-                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"    
-        
+                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   +
+                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"
+
         rule assemble:
             input:
                 OUT + "/16S_having_reads_merged/{stem}_L001_R1_unmerged_001.fastq.gz",
@@ -395,11 +395,11 @@ rule fastq_to_fasta:
         "seqkit fq2fa {input} -o {output}"
 
 rule filter_fastq_by_length:
-    input: 
+    input:
         "{stem}.fastq.gz"
-    output: 
-        "{stem}_size_filetered.fastq.gz" 
-    params: 
+    output:
+        "{stem}_size_filetered.fastq.gz"
+    params:
         minlen = CONFIG["SPADES"]["min_length_of_merged_reads"]
     shell:
         "seqkit seq -m {params.minlen} -o {output} {input}"
@@ -412,7 +412,7 @@ rule merge_16S_reads:
         OUT + "/16S_having_reads_merged/{stem}_L001_merged_001.fastq.gz",
         OUT + "/16S_having_reads_merged/{stem}_L001_R1_unmerged_001.fastq.gz",
         OUT + "/16S_having_reads_merged/{stem}_L001_R2_unmerged_001.fastq.gz",
-        
+
     log:
         LOGS + "/merging_16Shaving_pairs_{stem}.log"
     params:
@@ -423,7 +423,7 @@ rule merge_16S_reads:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
         "bbmerge.sh maxstrict=t mininsert=200   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
-                " in2={input[1]} " + 
+                " in2={input[1]} " +
                 " threads={threads} " +
                 " outu1={output[1]} " +
                 " outu2={output[2]} " +
@@ -437,12 +437,62 @@ rule merge_16S_reads:
 
 rule detect_rRNA:
     input: tmp + "/{stem}.fasta"
-    output: tmp + "/{stem}_rRNA.gtf" 
+    output: tmp + "/{stem}_rRNA.gtf"
     threads: CONFIG["MACHINE"]["threads_barnap"]
-    log:  tmp + "/{stem}_contigs_rRNA.log"  
+    log:  tmp + "/{stem}_contigs_rRNA.log"
     shell: " barrnap --kingdom bac --evalue 1e-4 --reject 0.005  --threads {threads} {input} | grep 16S  > {output} 2> {log} "
 
 
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+
+
+rule copy_final_16S_reads:
+    input:
+        chose_deduplicated_or_not
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+    shell:
+        '''
+        cp {input[0]} {output[0]}
+        cp {input[1]} {output[1]}
+        '''
+
+rule match_pairs_after_dedup:
+    input:
+        tmp + "/16S_having_reads/{stem}_L001_R1_001_wodup.fastq.gz",
+        tmp + "/16S_having_reads/{stem}_L001_R2_001_dedup.fastq.gz",
+    output:
+        tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
+        tmp + "/16S_having_reads/{stem}_L001_R2_001_matchedadedup.fastq.gz",
+    log:
+        LOGS + "/rematchingpairsAdedup_{stem}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/matching_after_deduplication_{stem}.log"
+    shell:
+        "repair.sh in={input[0]} out={output[0]} " +
+                " in2={input[1]} out2={output[1]}"
+                " threads={threads} " +
+                "-Xmx{params.m}g &> {log}"
+
+
+
+rule deduplicate:
+    input:
+        tmp + "/16S_having_reads/{stem}_L001_R2_001_wodup.fastq.gz",
+    output:
+        tmp + "/16S_having_reads/{stem}_L001_R2_001_dedup.fastq.gz"
+    log:
+        LOGS + "/deduplication_{stem}.log"
+    conda:
+        "../envs/umi.yaml"
+    shell:
+        "  java -server -Xms8G -Xmx8G -Xss20M -jar dependencies/UMICollapse_fastq/test.jar fastq -i {input} -o {output} &> {log} "
 
 
 rule match_pairs_after_filtering:
@@ -450,8 +500,8 @@ rule match_pairs_after_filtering:
         tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz",
         tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz"
     output:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        tmp + "/16S_having_reads/{stem}_L001_R1_001_wodup.fastq.gz",
+        tmp + "/16S_having_reads/{stem}_L001_R2_001_wodup.fastq.gz",
     log:
         LOGS + "/rematchingpairs_{stem}.log"
     params:
@@ -462,7 +512,7 @@ rule match_pairs_after_filtering:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell:
         "repair.sh in={input[0]} out={output[0]} " +
-                " in2={input[1]} out2={output[1]}" 
+                " in2={input[1]} out2={output[1]}"
                 " threads={threads} " +
                 "-Xmx{params.m}g &> {log}"
 
@@ -476,7 +526,7 @@ rule detect_16S_by_hmm_fastq:
     params:
         hmm = CONFIG["16S"]["hmm_reads"]["model"],
         e = CONFIG["16S"]["hmm_reads"]["e"]
-    threads: 
+    threads:
         THREADS
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( seqkit fq2fa  {input})"
@@ -489,11 +539,11 @@ rule detect_16S_by_hmm_fasta:
     params:
         hmm = CONFIG["16S"]["hmm_contigs"]["model"],
         e = CONFIG["16S"]["hmm_contigs"]["e"]
-    threads: 
+    threads:
         THREADS
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( cat {input})"
-        
+
 rule detect_16S_by_hmm_in_R2_fastq:
     input:
        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
@@ -502,7 +552,7 @@ rule detect_16S_by_hmm_in_R2_fastq:
     params:
         hmm = CONFIG["16S"]["hmm_reads"]["model"],
         e = CONFIG["16S"]["hmm_reads"]["e"]
-    threads: 
+    threads:
         THREADS
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( seqkit fq2fa  {input})"
@@ -518,18 +568,18 @@ rule filterout_r2primer_repaired_sequence_not_corossing16S:
         te =  CONFIG["16S"]["hmm_reads"]["te"],
         rs =  CONFIG["16S"]["hmm_reads"]["rs"],
         re =  CONFIG["16S"]["hmm_reads"]["re"],
-        length =  CONFIG["16S"]["hmm_reads"]["max_R2_fraction"] 
+        length =  CONFIG["16S"]["hmm_reads"]["max_R2_fraction"]
 
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/filteringR2_16S_{stem}.log"
     shell:
-        "seqkit grep -v  -f <(julia scripts/extract_not_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  " 
+        "seqkit grep -v  -f <(julia scripts/extract_not_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  "
 
 
 
-  
+
 
 
 
@@ -547,14 +597,14 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         te =  CONFIG["16S"]["hmm_reads"]["te"],
         rs =  CONFIG["16S"]["hmm_reads"]["rs"],
         re =  CONFIG["16S"]["hmm_reads"]["re"],
-        length =  CONFIG["16S"]["hmm_reads"]["length"] 
+        length =  CONFIG["16S"]["hmm_reads"]["length"]
 
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
-        "julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} " 
+        "julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
 
 
 
@@ -563,7 +613,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
     if config["SPADES"]["include"] == "bbmerge_contigs":
         rule assemble:
             input:
-                choose_err_cor, 
+                choose_err_cor,
                 tmp + "/{stem}_contigs_bbmerge_clustered.fasta"
                 #tmp + "/{stem}_001merged.fastq.gz"
             output:
@@ -579,7 +629,7 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 "  -k 127  -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
                 "cp {params.spades_dir}/transcripts.fasta  {output[0]}; " +
                 "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-    
+
     if config["SPADES"]["include"] == "merged_reads":
         rule custer4spades:
             input:
@@ -592,9 +642,9 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 CONFIG["MACHINE"]["threads_cdhit"]
             shell:
                 "cd-hit-est -T {threads} -c {params.clustering_frac} -i {input} -o {output} "
-        
+
         rule get_name_merged:
-            input: 
+            input:
                 OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz"
             output:
                 tmp + "/16S_having_reads/{stem}_merged.names"
@@ -609,9 +659,9 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 r1 = tmp + "/16S_having_reads/{stem}_L001_R1_001_longins.fastq.gz",
                 r2 = tmp + "/16S_having_reads/{stem}_L001_R2_001_longins.fastq.gz",
             shell:
-                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   + 
-                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"    
-        
+                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   +
+                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"
+
         rule assemble:
             input:
                 OUT + "/16S_having_reads_merged/{stem}_L001_R1_unmerged_001.fastq.gz",
@@ -656,36 +706,6 @@ if CONFIG["ASSEMBLER"] == "SPADES":
                 "cp {params.spades_dir}/transcripts.fasta {output[0]}; " +
                 "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
 
-
-
-
-
-
-
-
-rule filterout_r1primer_sequence_having_reads:
-    input:
-        tmp + "/{stem}_R1_001filtered.fastq.gz"
-    output:
-        LOGS + "/BBDUK/{stem}_R1_refiltering.log",
-        temp(tmp + "/{stem}_R1_001filtered_withr1primer.fastq.gz")
-    log:
-        LOGS + "/refilteringr1seq_{stem}.log"
-    params:
-        ref =       CONFIG["PRIMERS"]["R1"],
-        k =         CONFIG["PRIMERS"]["R1_k"],
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
-    shell:
-        "bbduk.sh in={input[0]} outm={output[1]} " +
-                "ref={params.ref} threads={threads} " +
-                " k={params.k} restrictleft=40 " +
-                " threads={threads} " +
-                "stats={output[0]} overwrite=t " +
-                "-Xmx{params.m}g 2> {log}"
 
 
 
@@ -740,7 +760,7 @@ rule filterout_r2primer_sequence_having_reads:
         LOGS + "/discardingr2seq_{stem}.log"
     params:
         ref =       CONFIG["PRIMERS"]["R1"],
-        k =         31,
+        k =         CONFIG["PRIMERS"]["R1_k"],
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -763,7 +783,9 @@ rule prefilter_primer_sequence_having_reads: # filter reads ghaving the desired 
     output:
         LOGS + "/BBDUK/{stem}_prefilteringbasedonR1.log",
         temp(tmp + "/{stem}_R1_001filteredpre.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filteredpre.fastq.gz")
+        temp(tmp + "/{stem}_R2_001filteredpre.fastq.gz"),
+        temp(tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz"),
+        temp(tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz"),
     log:
         LOGS + "/filteringR1_{stem}.log"
     params:
@@ -775,8 +797,8 @@ rule prefilter_primer_sequence_having_reads: # filter reads ghaving the desired 
     benchmark:
         BENCHMARKS + "/prefilteringR1_{stem}.log"
     shell:
-        "bbduk.sh in={input[0]} outm={output[1]} " +
-                "in2={input[1]} outm2={output[2]} " +
+        "bbduk.sh  in={input[0]} outm={output[1]} out={output[3]} " +
+                "in2={input[1]} outm2={output[2]} out2={output[4]} " +
                 "ref={params.ref} threads={threads} " +
                 " k={params.k} " +
                 " threads={threads} " +
@@ -826,7 +848,7 @@ rule merge_reads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/filteringR1_{stem}.log"
-    shell: 
+    shell:
         "bbmerge.sh in1={input[0]} in2={input[1]} " +
                 "outu1={output[1]} outu2={output[2]} " +
                 "out={output[3]} threads={threads} " +
@@ -845,7 +867,7 @@ rule filter_size:
         max_length = CONFIG["max_contig_length"]
     shell:
         "seqkit seq -m {params.min_length} -M {params.max_length} {input} > {output}"
-        
+
 rule custer:
     input:
         "{stem}.fasta"
@@ -902,9 +924,9 @@ rule map_filtered_reads_on_ref:
         ref = CONFIG["ref"]
     shell:
         "bwa mem -t {threads} {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
-    
+
 rule sortbyname:
-    input: 
+    input:
         "{stem}.bam"
     output:
         "{stem}_sortedbyname.bam"
@@ -926,7 +948,7 @@ rule merge_insert_sizes:
         expand(OUT + "/INSERT_SIZE/{stem}.csv", stem=STEMS)
     output:
         OUT + "/INSERT_SIZE/all.csv"
-    params: 
+    params:
         header="Species;Starting_letter;Insert_size;Sample"
     shell:
         '''echo "{params.header}" > {output}; cat {input} >> {output}'''
@@ -942,14 +964,14 @@ rule filter_rRNA_contigs:
         te =  CONFIG["16S"]["hmm_contigs"]["te"],
         rs =  CONFIG["16S"]["hmm_contigs"]["rs"],
         re =  CONFIG["16S"]["hmm_contigs"]["re"],
-        length =  CONFIG["16S"]["hmm_contigs"]["length"] 
+        length =  CONFIG["16S"]["hmm_contigs"]["length"]
     threads:
         CONFIG["BBDUK"]["threads"]
     output:
         "{stem}_16s.fasta",
         "{stem}_16s_motifs.fasta"
     shell:
-        "julia scripts/extract_properly_matching_rRNA_names_contigs.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -f  {input[0]} -o {output[0]} -g {output[1]}  " 
+        "julia scripts/extract_properly_matching_rRNA_names_contigs.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -f  {input[0]} -o {output[0]} -g {output[1]}  "
 
 rule create_bwa_index:
     input:
@@ -993,44 +1015,69 @@ rule quantify_contigs:
         "salmon quant --meta -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}  --posBias ; mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}"
 
 rule run_kraken_on_contigs:
-    input: 
+    input:
         tmp + "/{stem}_final_contigs.fasta"
     output:
         tmp + "/{stem}_finalontigs_kraken.txt",
         tmp + "/{stem}_finalcontigs_kraken_raport.txt"
     threads: CONFIG["MACHINE"]["threads_kraken"]
-    conda: "../envs/metagenome.yaml" 
+    conda: "../envs/metagenome.yaml"
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
         "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
 
 rule run_kraken_on_merged_reads:
-    input: 
+    input:
         OUT + "/16S_having_reads_merged/{stem}_L001_merged_001.fastq.gz",
     output:
         tmp + "/{stem}_mergedreads_kraken.txt",
         tmp + "/{stem}_mergedreads_kraken_raport.txt"
     threads: CONFIG["MACHINE"]["threads_kraken"]
-    conda: "../envs/metagenome.yaml" 
+    conda: "../envs/metagenome.yaml"
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
         "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
 
 rule run_kraken_on_unmerged_reads:
-    input: 
+    input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
         tmp + "/{stem}_pairedreads_kraken.txt",
         tmp + "/{stem}_pairedreads_kraken_raport.txt"
     threads: CONFIG["MACHINE"]["threads_kraken"]
-    conda: "../envs/metagenome.yaml" 
+    conda: "../envs/metagenome.yaml"
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
         "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+rule run_kraken_on_readswoprimers:
+    input:
+        temp(tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz"),
+        temp(tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz"),
+    output:
+        tmp + "/{stem}_readswoprimers_kraken.txt",
+        tmp + "/{stem}_readswoprimers_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+rule  run_bracken_on_readswoprimers:
+    input:
+        tmp + "/{stem}_readswoprimers_kraken_raport.txt"
+    output:
+        tmp + "/{stem}_readswoprimers_bracken_raport.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l G -d {params.db} -i {input} -o {output}"
 
 rule run_bracken_on_contigs:
     input:
@@ -1067,13 +1114,24 @@ rule run_bracken_on_piared_reads:
         "bracken -l G -d {params.db} -i {input} -o {output}"
 
 
+rule exctract_abundant_readswoprimers:
+    input:
+        raports = expand(tmp + "/{stem}_readswoprimers_bracken_raport.txt",stem = STEMS)
+    params:
+        out_stem = tmp + "/Genus_analysis_readswoprimers",
+        cut_off_analysis = 0.01
+    output:
+        tmp + "/Genus_analysis_readswoprimers_filtered_fractions.csv",
+        tmp + "/Genus_analysis_readswoprimers_additional_info.csv"
+    shell:
+        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 rule exctract_abundant_contigs:
     input:
         raports = expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt",stem = STEMS)
     params:
         out_stem = tmp + "/Genus_analysis_finalcontigs",
-        cut_off_analysis = 0.01 
+        cut_off_analysis = 0.01
     output:
         tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
         tmp + "/Genus_analysis_finalcontigs_additional_info.csv"
@@ -1087,7 +1145,7 @@ rule exctract_abundant_merged_reads:
         raports = expand(tmp + "/{stem}_mergedreads_bracken_raport.txt",stem = STEMS)
     params:
         out_stem = tmp + "/Genus_analysis_mergedreads",
-        cut_off_analysis = 0.01 
+        cut_off_analysis = 0.01
     output:
         tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
         tmp + "/Genus_analysis_mergedreads_additional_info.csv"
@@ -1100,7 +1158,7 @@ rule exctract_abundant_pairedreads:
         raports = expand(tmp + "/{stem}_pairedreads_bracken_raport.txt",stem = STEMS)
     params:
         out_stem = tmp + "/Genus_analysis_pairedreads",
-        cut_off_analysis = 0.01 
+        cut_off_analysis = 0.01
     output:
         tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         tmp + "/Genus_analysis_pairedreads_additional_info.csv"
@@ -1128,7 +1186,7 @@ rule merge_trimmed_reads:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
         "bbmerge.sh  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
-                " in2={input[1]} " + 
+                " in2={input[1]} " +
                 " threads={threads} " +
                 " outu1={output[1]} " +
                 " outu2={output[2]} " +
@@ -1148,7 +1206,7 @@ rule fuse_unmerged_reads:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
         "fuse.sh  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
-                " in2={input[1]} " + 
+                " in2={input[1]} " +
                 " fusepairs=t " +
                 "-Xmx{params.m}g "
 
@@ -1226,4 +1284,3 @@ rule extract_rRNA_seq_having:
                 " threads={threads} " +
                 " overwrite=t " +
                 "-Xmx{params.m}g "
-
