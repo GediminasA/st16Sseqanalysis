@@ -15,15 +15,15 @@ function parse_commandline()
         "--inbam", "-i"
             help = "input sam "
             arg_type = String
-            required = true 
+            required = true
         "--outcsv", "-o"
             help = "Data "
             arg_type = String
-            required = true 
+            required = true
         "--stem", "-s"
             help = "Sample id for output - stem"
             arg_type = String
-            required = true 
+            required = true
     end
 
     return parse_args(s)
@@ -50,11 +50,11 @@ end
 
 
 function analyse_pairs!(r1::Array{BAM.Record,1},r2::Array{BAM.Record,1},cont::Dict{Tuple{String,Char},Accumulator{Int64,Int64}},lens::Dict{Tuple{String,Char},Array{Int64}}
-)
+, reverse = true)
         chosenr2 = undef
         refn_r2 = undef
         for i in r2
-            if (BAM.flag(i)&256 != 256) && (BAM.flag(i)&16 != 16)
+            if ((BAM.flag(i)&256 != 256) && (BAM.flag(i)&16 == 16) && reverse) ||  ((BAM.flag(i)&256 != 256) && (BAM.flag(i)&16 != 16) && !reverse)
                 chosenr2 = i
                 refn_r2 = join(split(BAM.refname(i),"_")[1:2],"_")
                 break
@@ -66,7 +66,7 @@ function analyse_pairs!(r1::Array{BAM.Record,1},r2::Array{BAM.Record,1},cont::Di
         if chosenr2 != undef
             for j in r1
                 refn_r1 = join(split(BAM.refname(j),"_")[1:2],"_")
-                if (BAM.flag(j)&16 == 16) && (refn_r1 == refn_r2)
+                if (((BAM.flag(j)&16 == 16) && !reverse) || ((BAM.flag(j)&16 != 16) && reverse)         ) && (refn_r1 == refn_r2)
                     push!(r1_array,(j,aligned_fraction(j)))
                 end
             end
@@ -86,7 +86,7 @@ function analyse_pairs!(r1::Array{BAM.Record,1},r2::Array{BAM.Record,1},cont::Di
             tlen = maximum(refpos) - minimum(refpos) + 1
             fl =  string(BAM.sequence(chosenr2))[1]
             k = (refn_r2,fl)
-            if ! (k in keys(cont)) 
+            if ! (k in keys(cont))
                 cont[k] = Accumulator{Int64,Int64}()
                 lens[k] = Array{Int64,1}()
             end
@@ -97,7 +97,7 @@ end
 
 function main()
     parsed_args = parse_commandline()
-    println(parsed_args["inbam"])
+    println(stderr,parsed_args["inbam"])
     out_csv = parsed_args["outcsv"]
     stem = parsed_args["stem"]
     out_csv_f = open(out_csv,"w")
@@ -113,30 +113,31 @@ function main()
 
     r1=Array{BAM.Record,1}()
     r2=Array{BAM.Record,1}()
+    ct = 0
     current_read_name = ""
-    first = true
     for record in reader
-            flag = BAM.flag(record)
-        if flag&4 != 4 
+        flag = BAM.flag(record)
+        if flag&4 != 4 && flag&8 != 8  #skip unmapped and not having pairs mapped
+            ct += 1
             name = BAM.tempname(record)
-            if name != current_read_name 
-                if !first
-                    current_read_name = name
-                    analyse_pairs!(r1,r2,ct_fl,l_fl)
-                else
-                    first = false
-                end
+            if ct == 1
+                current_read_name = name
+            end
+            if name != current_read_name
+                refn_r2 = join(split(BAM.refname(r2[1]),"_")[1:2],"_")
+                current_read_name = name
+                analyse_pairs!(r1,r2,ct_fl,l_fl)
                 r1=Array{BAM.Record,1}()
                 r2=Array{BAM.Record,1}()
             end
-            if flag&64 == 64 
+            if flag&64 == 64 # check if R1
                 push!(r1,record)
             else
                 push!(r2,record)
             end
         end
     end
-    
+
     # falg = BAM.flag(record)
         # mq = BAM.mappingquality(record)
         # refn = join(split(BAM.refname(record),"_")[1:2],"_")
@@ -159,8 +160,8 @@ function main()
         #     s = first(aln.anchors).refpos
         #     e = last(aln.anchors).refpos
         #     l = abs(s-e)+1
-        # end 
-    println("Species;Starting_letter;Insert_size;Sample")
+        # end
+    println("Species;Starting letter;Insert size;Sample;Number")
     # for (ref,fl) in keys(ct_fl)
     #     for l in keys(ct_fl[(ref,fl)])
     #         lct = ct_fl[(ref,fl)][l]
@@ -169,13 +170,14 @@ function main()
     # end
     for (ref,fl) in keys(ct_fl)
         lct = median(l_fl[(ref,fl)])
-        println("$ref $fl $lct")
+        sz = length(l_fl[(ref,fl)])
+        println("$ref;$fl;$lct;$stem;$sz")
         for l in l_fl[(ref,fl)]
             println(out_csv_f,"$ref;$fl;$l;$stem")
         end
     end
     close(out_csv_f)
-            
+
 end
 
 main()

@@ -29,6 +29,25 @@ rule trim_first_unacurate_reaqds_from_R2:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
+rule trim_last_unacurate_reaqds_from_mergedR1R2_and_filter_bySize:
+    input:
+        OUT + "/16S_having_reads_merged/{stem}_L001_merged_001.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/{stem}_right_reads.fasta",
+    params:
+        add =       " ftr=20 minlength=400 ",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/trimming_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+                " threads={threads} " +
+                "{params.add} threads={threads} " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
+
 rule tadpoleR2:
     input:
         tmp + "/16S_amplicons/{stem}_left_reads.fasta",
@@ -262,7 +281,7 @@ rule get_final_contigs:
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min_cluster.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size400min_cluster.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb_size350min.fasta",
+        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_bbduk_size_vsearchcl.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_woN_size_woident_swarm_wosinglets_unoise.fasta",
     output:
@@ -422,7 +441,7 @@ rule merge_16S_reads:
     benchmark:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
-        "bbmerge.sh maxstrict=t mininsert=200   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+        "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
                 " in2={input[1]} " +
                 " threads={threads} " +
                 " outu1={output[1]} " +
@@ -937,11 +956,12 @@ rule analyse_insert_size:
     input:
         tmp + "/{stem}_aligned_reads_sortedbyname.bam"
     output:
-        OUT + "/INSERT_SIZE/{stem}.csv"
+        OUT + "/INSERT_SIZE/{stem}.csv",
+        OUT + "/INSERT_SIZE/{stem}_summary.csv"
     params:
         stem = "{stem}"
     shell:
-        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output} -s {params.stem}"
+        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output[0]} -s {params.stem} > {output[1]}"
 
 rule merge_insert_sizes:
     input:
@@ -952,6 +972,19 @@ rule merge_insert_sizes:
         header="Species;Starting_letter;Insert_size;Sample"
     shell:
         '''echo "{params.header}" > {output}; cat {input} >> {output}'''
+
+rule summarise_insert_sizes:
+    input:
+        OUT + "/INSERT_SIZE/all.csv"
+    params:
+        name =  OUT + "/INSERT_SIZE/summary"
+    output:
+        OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
+    shell:
+        "julia scripts/pivot_bam_coverage_data.jl -i {input} -o {params.name} "
 
 
 
@@ -1052,7 +1085,7 @@ rule run_kraken_on_unmerged_reads:
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
-        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+        "kraken2 --use-names   --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input[0]}"
 
 rule run_kraken_on_readswoprimers:
     input:

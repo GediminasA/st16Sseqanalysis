@@ -30,25 +30,35 @@ wlogger.info(f'Output direcoty: [{CONFIG["OUT-DIR"]}]')
 # ------------------------------ Targets ------------------------------------ #
 
 localrules: filterout_r1primer_sequence_having_reads_on16S
+
+
+rule zymo_inserts:
+    input:
+        OUT + "/INSERT_SIZE/all.csv",
+        OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
+        tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
+        #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
+        tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
+
 rule all:
     input:
-        #expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz", stem=STEMS),
-        #expand(OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz", stem=STEMS),
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz", stem=STEMS),
+        expand(OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz", stem=STEMS),
         #expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
         #expand(tmp + "/{stem}_mergedreads_bracken_raport.txt", stem=STEMS),
         #expand(tmp + "/{stem}_pairedreads_bracken_raport.txt", stem=STEMS),
         #expand(tmp + "/{stem}_contigs_on_reference_salmon.csv", stem=STEMS),
-        expand(tmp + "/{stem}_aligned_reads.bam", stem=STEMS),
-        expand(OUT + "/INSERT_SIZE/{stem}.csv", stem=STEMS),
-        OUT + "/INSERT_SIZE/all.csv",
         tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         tmp + "/Genus_analysis_readswoprimers_filtered_fractions.csv",
-        #tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
+        tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
         #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
 
         #expand(tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv", stem=STEMS),
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
+        MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #expand(tmp + "/{stem}_contigs_size_filtered.fasta", stem=STEMS),
         #expand(tmp + "/{stem}_contigs_size_filtered_clustered_rRNA.gtf", stem=STEMS),
         #expand(tmp + "/{stem}_reads_on_contigs.bam", stem=STEMS),

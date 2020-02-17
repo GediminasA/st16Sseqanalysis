@@ -100,27 +100,51 @@ else:
             "./scripts/fastq_num_reads.sh {input} > {output}; " +
             "sed -i -e 's/^/{params.prefix}/' {output} ; echo >>  {output}"
 
-    rule subsample:
-        input:
-            tmp + "/{stem}_R1_001Trimmed.fastq.gz",
-            tmp + "/{stem}_R2_001Trimmed.fastq.gz",
-            OUT + "/read_counts.txt"
-        output:
-            temp(tmp + "/{stem}_R1_001subs.fastq.gz"),
-            temp(tmp + "/{stem}_R2_001subs.fastq.gz")
-        log:
-            LOGS + "/SEQTK/R1/{stem}.log",
-            LOGS + "/SEQTK/R2/{stem}.log"
-        benchmark:
-            BENCHMARKS + "/{stem}_subsampling.log"
-        params:
-            out = OUT
-        threads:
-            CONFIG["SUBSAMPLING"]["threads"]
-        shell:
-            """minimum=`python ./scripts/""" +
-            """get_minimum_read_number.py --input {params.out}/read_counts.txt`;
-            seqkit sample -s 11 -j {threads} --two-pass -n $minimum \
-            {input[0]} -o {output[0]} 2> {log[0]};
-            seqkit sample -s 11 -j {threads} --two-pass -n $minimum \
-            {input[1]} -o {output[1]} 2> {log[1]};"""
+    if CONFIG["SUBSAMPLING"]["run"]:
+        rule subsample:
+            input:
+                tmp + "/{stem}_R1_001Trimmed.fastq.gz",
+                tmp + "/{stem}_R2_001Trimmed.fastq.gz",
+                OUT + "/read_counts.txt"
+            output:
+                temp(tmp + "/{stem}_R1_001subs.fastq.gz"),
+                temp(tmp + "/{stem}_R2_001subs.fastq.gz")
+            log:
+                LOGS + "/SEQTK/R1/{stem}.log",
+                LOGS + "/SEQTK/R2/{stem}.log"
+            benchmark:
+                BENCHMARKS + "/{stem}_subsampling.log"
+            params:
+                out = OUT
+            threads:
+                CONFIG["SUBSAMPLING"]["threads"]
+            shell:
+                """minimum=`python ./scripts/""" +
+                """get_minimum_read_number.py --input {params.out}/read_counts.txt`;
+                seqkit sample -s 11 -j {threads} --two-pass -n $minimum \
+                {input[0]} -o {output[0]} 2> {log[0]};
+                seqkit sample -s 11 -j {threads} --two-pass -n $minimum \
+                {input[1]} -o {output[1]} 2> {log[1]};"""
+    else:
+        rule subsample:
+            input:
+                tmp + "/{stem}_R1_001Trimmed.fastq.gz",
+                tmp + "/{stem}_R2_001Trimmed.fastq.gz",
+                OUT + "/read_counts.txt"
+            output:
+                temp(tmp + "/{stem}_R1_001subs.fastq.gz"),
+                temp(tmp + "/{stem}_R2_001subs.fastq.gz")
+            log:
+                LOGS + "/SEQTK/R1/{stem}.log",
+                LOGS + "/SEQTK/R2/{stem}.log"
+            benchmark:
+                BENCHMARKS + "/{stem}_subsampling.log"
+            params:
+                out = OUT
+            threads:
+                CONFIG["SUBSAMPLING"]["threads"]
+            shell:
+                """
+                    ln  {input[0]} {output[0]}
+                    ln  {input[1]} {output[1]}
+                """
