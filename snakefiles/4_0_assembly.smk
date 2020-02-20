@@ -7,40 +7,129 @@ def choose_err_cor(wildcards):
     else:
         return(OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz")
 
+#rule cluster the cut first 250
+
+
+
 #ass embe genetic part
 
+rule cut_first_250_bp:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
+    params:
+        add =       " ftr=249  ",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/trimming_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+                " threads={threads} " +
+                "{params.add} " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
+
+
+rule group_reads_by_first250bp:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
+    output:
+        cls = dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl{id}")
+    params:
+        stem = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl",
+        centroids = tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta",
+    shell:
+        "vsearch   --cluster_fast   {input} --id 0.9 --sizeout  --clusters  {params.stem} --fasta_width 0  --centroids {params.centroids}     "
+
+rule get_centroids_known:
+    input:
+        cls = dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl{id}"),
+    output:
+        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
+    params:
+        centroids = tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta",
+        stem = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl"
+    shell:
+        "  cp  {params.centroids} {output}  "
+
+rule get_cluster_reads_ids:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl{id}"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_ids/{id}.name"
+    shell:
+        '''seqkit seq -n   {input} | cut -f1 -d ";" > {output} '''
+
+rule get_R1_of_clusters:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_ids/{id}.name"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq"
+    shell:
+        "seqkit grep -f {input[1]} {input[0]} > {output}"
+
+rule get_R2_of_clusters:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_ids/{id}.name"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2.fastq"
+    shell:
+        "seqkit grep -f {input[1]} {input[0]} > {output}"
 
 rule trim_first_unacurate_reaqds_from_R2:
     input:
-        OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2.fastq"
     output:
-        tmp + "/16S_amplicons/{stem}_left_reads.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
     params:
         add =       " ftl=20 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/trimming_{stem}.log"
     shell:
         "bbduk.sh in={input[0]} out={output[0]} " +
-                " threads={threads} " +
-                "{params.add} threads={threads} " +
-                " overwrite=t " +
-                "-Xmx{params.m}g "
+        " threads={threads} " +
+        " {params.add} threads={threads} " +
+        " overwrite=t "
 
-rule trim_last_unacurate_reaqds_from_mergedR1R2_and_filter_bySize:
+
+rule merge_clustered_reads:
     input:
-        OUT + "/16S_having_reads_merged/{stem}_L001_merged_001.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
     output:
-        tmp + "/16S_amplicons/{stem}_right_reads.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_R1_unmerged.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_R2_unmerged.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merging.log",
     params:
-        add =       " ftr=20 minlength=400 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/trimming_{stem}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+        "mincountseed=1 mincountextend=1 rem k=100 extend2=600 ecct vstrict=t  mininsert=900"
+        " in2={input[1]} " +
+        " threads={threads} " +
+        " outu1={output[1]} " +
+        " outu2={output[2]} " +
+        "-Xmx{params.m}g &> {output[3]}"
+
+rule filter_bySize_and_cut:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged.fastq",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef.fasta",
+    params:
+        add =       " minlength=950  ftr=949",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
     shell:
         "bbduk.sh in={input[0]} out={output[0]} " +
                 " threads={threads} " +
@@ -48,51 +137,15 @@ rule trim_last_unacurate_reaqds_from_mergedR1R2_and_filter_bySize:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
-rule tadpoleR2:
+rule collect_16S_fragments:
     input:
-        tmp + "/16S_amplicons/{stem}_left_reads.fasta",
+        dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef_woident_swarm.fasta"),
     output:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
-    params:
+        tmp + "/{stem}_final_contigs.fasta"
     shell:
-        "tadpole.sh  k=200  mincountseed=1 mincountextend=1  mode=extend extendright=250   in={input[0]} out={output[0]}"
-        #"tadpole.sh  k=127 mincountseed=1 mincountextend=1   in={input[0]} out={output[0]}"
+        "cat {input} > {output}"
 
-rule assemble_r2_clustered:
-    input:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
-    output:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_reasemb.fasta",
-    shell:
-        "tadpole.sh  k=180  mincountseed=1 mincountextend=1    in={input[0]} out={output[0]}"
-        #"tadpole.sh  k=100 mode=contig  mincountseed=1 mincountextend=1  mode=extend extendright=1000  in={input[1]},{input[0]}  out={output[0]}"
-
-
-
-rule tadpole_merge_assembly:
-    input:
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
-    output:
-        tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
-    params:
-    shell:
-        "tadpole.sh   mode=extend extendright=1000 extendleft=1000  in={input[0]},{input[1]} out={output[0]}"
-        #"tadpole.sh  k=127 mincountseed=1 mincountextend=1   in={input[0]} out={output[0]}"
-
-
-rule tadpole_merge_assembly_wreads:
-    input:
-        tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
-        tmp + "/16S_amplicons/{stem}_left_reads.fasta",
-    output:
-        tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades_extendedreads.fasta",
-    params:
-    shell:
-        "tadpole.sh   mode=extend extendright=1000 extendleft=1000  in={input[0]},{input[1]} out={output[0]}"
-        #"tadpole.sh  k=127 mincountseed=1 mincountextend=1   in={input[0]} out={output[0]}"
-
-#
+# various utilities
 rule correct_reads:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
@@ -112,24 +165,6 @@ rule correct_reads:
         "spades.py  --only-error-correction  " +  "  -1  {input[0]} -2  {input[1]} " +
         "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
         " mv {params.r1cor} {output[0]} ;  mv {params.r2cor} {output[1]} "
-
-
-rule correct_contigs:
-    input:
-        OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz",
-    output:
-        tmp + "/16S_amplicons/{stem}_L001_merged_001_size_filetered_corrected.fastq.gz",
-    benchmark:
-        bench + "/assemble_{stem}.log"
-    params:
-        spades_dir = tmp + "/{stem}_correction_single",
-        r1cor = tmp + "/{stem}_correction_single/corrected/{stem}_L001_merged_001_size_filetered.fastq.00.0_0.cor.fastq.gz",
-    threads:
-        CONFIG["MACHINE"]["threads_spades"]
-    shell:
-        "spades.py  --only-error-correction  " +  "  -s  {input[0]} " +
-        "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-        " mv {params.r1cor} {output[0]}  "
 
 
 
@@ -165,57 +200,6 @@ rule trim_primersequence_from_contig:
                 "-Xmx{params.m}g "
 
 
-rule assemble_bbmerge:
-    input:
-        choose_err_cor,
-        #tmp + "/{stem}_001merged.fastq.gz"
-    output:
-        tmp + "/{stem}_contigs_bbmerge.fasta",
-        tmp + "/{stem}_contigs_bbmergeR1.fasta",
-        tmp + "/{stem}_contigs_bbmergeR2.fasta"
-    log:
-        LOGS + "/rematchingpairs_{stem}.log"
-    params:
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
-    shell: #maxstrict=t   mininsert=300 ecct extend2=200 iterations=5 mindepthseed=300 mindepthextend=200
-        "bbmerge.sh  ecct k=150 mininsert=400  extend2=100 extend=100 rem iterations=30  mindepthseed=1 mindepthextend=1  in={input[0]} out={output[0]} outu1={output[1]}  outu2={output[2]}  " + #ecct extend2=50 iterations=10
-                " in2={input[1]} " +
-                " threads={threads} " +
-                "-Xmx{params.m}g &> {log}"
-
-
-rule tadpole:
-    input:
-        tmp + "/{stem}_contigs_bbmerge.fasta",
-        tmp + "/{stem}_contigs_bbmergeR2.fasta"
-    output:
-        tmp + "/{stem}_contigs_bbmerge_tadpole.fasta"
-    shell:
-        "tadpole.sh mode=extend extendleft=1000 extendleft=1000  mincountseed=1 mincountextend=1  k=124 in={input[0]},{input[1]} out={output[0]}"
-
-
-rule size:
-    input:
-        "{stem}.fasta",
-    output:
-        "{stem}_size.fasta",
-    shell:
-        "bbduk.sh in={input} out={output} minlength=700  forcetrimright=699 "
-
-rule size4tad:
-    input:
-        "{stem}.fasta",
-    output:
-        "{stem}_size{len}min.fasta",
-    params:
-        l="{len}"
-    shell:
-        "bbduk.sh in={input} out={output} minlength={params.l} "
-
 rule correctbb:
     input:
         "{stem}.fasta",
@@ -238,7 +222,17 @@ rule rmidenti:
     output:
         "{stem}_woident.fasta",
     shell:
-        "vsearch    --derep_fulllength   {input}   --sizeout   --relabel_sha1     --fasta_width 0  --output {output} "
+        '''
+        set +e
+        vsearch    --derep_fulllength   {input}   --sizeout   --fasta_width 0  --output {output}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
+        '''
 
 rule cluster_with_swarm:
     input:
@@ -274,8 +268,8 @@ rule cluster:
         #"vsearch     --cluster_size   {input}  --id 0.97 --sizeout  --sizein    --relabel_sha1     --fasta_width 0     --centroids {output} "
 
 
-rule get_final_contigs:
-    input:
+#rule get_final_contigs:
+#    input:
         #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades_size400.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
@@ -284,11 +278,11 @@ rule get_final_contigs:
         #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_bbduk_size_vsearchcl.fasta",
         #tmp + "/16S_amplicons/{stem}_L001_merged_woN_size_woident_swarm_wosinglets_unoise.fasta",
-    output:
+#    output:
         #tmp + "/{stem}_notonly16scontigs.fasta",
-        tmp + "/{stem}_final_contigs.fasta"
-    shell:
-        " cp  {input} {output}  "
+#        tmp + "/{stem}_final_contigs.fasta"
+#    shell:
+#        " cp  {input} {output}  "
 
 if CONFIG["ASSEMBLER"] == "SPADES":
     if config["SPADES"]["include"] == "bbmerge_contigs":
@@ -391,7 +385,7 @@ rule assemble_normalise:
     input:
         "{stem}.fastq.gz"
     output:
-       temp("{stem}_normalised.fastq.gz")
+       "{stem}_normalised.fastq.gz"
     log:
         LOGS + "/normlising_{stem}.log"
     params:
@@ -608,9 +602,9 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         tmp + "/{stem}_R1_001filtered.fastq.gz",
         tmp + "/{stem}_R1_001filtered_16s_nhmmer_res.csv"
     output:
-        temp(tmp + "/{stem}_R1_001filtered_withr1primer_16S.names.txt"),
+        tmp + "/{stem}_R1_001filtered_withr1primer_16S.names.txt",
         LOGS + "/{stem}_on_target.txt",
-        temp(tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz"),
+        tmp + "/{stem}_R1_001filtered_withr1primer_16S.fastq.gz",
     params:
         ts =  CONFIG["16S"]["hmm_reads"]["ts"],
         te =  CONFIG["16S"]["hmm_reads"]["te"],
@@ -734,7 +728,7 @@ rule retrim_R2_adapters_from_primers:
         tmp + "/{stem}_R2_001filtered_wor1primer.fastq.gz"
     output:
         LOGS + "/BBDUK/{stem}_r2retriming.log",
-        temp(tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz")
+        tmp + "/{stem}_R2_001filtered_wor1primer_retrim.fastq.gz"
     log:
         LOGS + "/BBDUK/r2retrimming_{stem}.log"
     params:
@@ -774,7 +768,7 @@ rule filterout_r2primer_sequence_having_reads:
         tmp + "/{stem}_R2_001filtered.fastq.gz"
     output:
         LOGS + "/BBDUK/{stem}_R2_discradingr2seq.log",
-        temp(tmp + "/{stem}_R2_001filtered_wor1primer.fastq.gz")
+        tmp + "/{stem}_R2_001filtered_wor1primer.fastq.gz"
     log:
         LOGS + "/discardingr2seq_{stem}.log"
     params:
@@ -801,10 +795,10 @@ rule prefilter_primer_sequence_having_reads: # filter reads ghaving the desired 
         tmp + "/{stem}_R2_001subs.fastq.gz"
     output:
         LOGS + "/BBDUK/{stem}_prefilteringbasedonR1.log",
-        temp(tmp + "/{stem}_R1_001filteredpre.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filteredpre.fastq.gz"),
-        temp(tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz"),
+        tmp + "/{stem}_R1_001filteredpre.fastq.gz",
+        tmp + "/{stem}_R2_001filteredpre.fastq.gz",
+        tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz",
+        tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz",
     log:
         LOGS + "/filteringR1_{stem}.log"
     params:
@@ -831,8 +825,8 @@ rule filter_primer_sequence_having_reads: # discarding R2 primer having reads
         tmp + "/{stem}_R2_001filteredpre.fastq.gz"
     output:
         LOGS + "/BBDUK/{stem}_filteringbasedonR1R2primer.log",
-        temp(tmp + "/{stem}_R1_001filtered.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filtered.fastq.gz")
+        tmp + "/{stem}_R1_001filtered.fastq.gz",
+        tmp + "/{stem}_R2_001filtered.fastq.gz"
     log:
         LOGS + "/filteringR1R2_{stem}.log"
     params:
@@ -1021,7 +1015,7 @@ rule map_reads_on_contigs:
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
     output:
-        temp(tmp + "/{stem}_reads_on_contigs.bam")
+        tmp + "/{stem}_reads_on_contigs.bam"
     threads: CONFIG["MACHINE"]["threads_bwa"]
     shell:
         "bwa mem -t {threads} {input[0]} {input[2]} {input[3]} | samtools view -b | samtools sort -n  > {output} "
@@ -1073,6 +1067,19 @@ rule run_kraken_on_merged_reads:
     shell:
         "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
 
+rule run_kraken_on_R1_reads:
+    input:
+        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
+    output:
+        tmp + "/{stem}_R1_kraken.txt",
+        tmp + "/{stem}_R1_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
 rule run_kraken_on_unmerged_reads:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
@@ -1085,12 +1092,12 @@ rule run_kraken_on_unmerged_reads:
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
-        "kraken2 --use-names   --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input[0]}"
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
 
 rule run_kraken_on_readswoprimers:
     input:
-        temp(tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz"),
+        tmp + "/{stem}_R1_001filtereWoprimers.fastq.gz",
+        tmp + "/{stem}_R2_001filtereWoprimers.fastq.gz",
     output:
         tmp + "/{stem}_readswoprimers_kraken.txt",
         tmp + "/{stem}_readswoprimers_kraken_raport.txt"
@@ -1123,6 +1130,17 @@ rule run_bracken_on_contigs:
     shell:
         "bracken -l G -d {params.db} -i {input} -o {output}"
 
+rule run_bracken_on_R1part:
+    input:
+        tmp + "/{stem}_R1_kraken_raport.txt"
+    output:
+        tmp + "/{stem}_R1_bracken_raport.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l G -d {params.db} -r 200 -i {input} -o {output}"
+
 rule run_bracken_on_merged_reads:
     input:
         tmp + "/{stem}_mergedreads_kraken_raport.txt"
@@ -1144,7 +1162,7 @@ rule run_bracken_on_piared_reads:
         db = CONFIG["KRAKEN_DB"]
     conda: "../envs/metagenome.yaml"
     shell:
-        "bracken -l G -d {params.db} -i {input} -o {output}"
+        "bracken -l G -d {params.db} -r 200 -i {input} -o {output}"
 
 
 rule exctract_abundant_readswoprimers:
@@ -1172,6 +1190,17 @@ rule exctract_abundant_contigs:
         "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 
+rule exctract_abundant_R1:
+    input:
+        raports = expand(tmp + "/{stem}_R1_bracken_raport.txt",stem = STEMS)
+    params:
+        out_stem = tmp + "/Genus_analysis_R1",
+        cut_off_analysis = 0.01
+    output:
+        tmp + "/Genus_analysis_R1_filtered_fractions.csv",
+        tmp + "/Genus_analysis_R1_additional_info.csv"
+    shell:
+        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 rule exctract_abundant_merged_reads:
     input:

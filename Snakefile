@@ -39,9 +39,12 @@ rule zymo_inserts:
         OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
         OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
-        tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
+        #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
+        #expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta", stem=STEMS),
+        #tmp + "/Genus_analysis_R1_filtered_fractions.csv",
         #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
-        tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
+        expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
+        #tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
 
 rule all:
     input:
@@ -56,6 +59,7 @@ rule all:
         tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
         #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
 
+        expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta", stem=STEMS),
         #expand(tmp + "/{stem}_L001_R2_repaired_16s_nhmmer_res.csv", stem=STEMS),
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
         MULTIQC_DIR + "/fastqc_report_raw_reads.html",

@@ -8,8 +8,8 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-INPUT-DIR: /media/root/ngs_nas3/2019_12_16_16S_UMI_insertai
-SAMPLES:  S3_
+INPUT-DIR: /mnt/beegfs/ga/16s_reads_simulator/out_real_l #/media/root/ngs_nas3/2019_12_16_16S_UMI_insertai
+SAMPLES: L700SD300_ 
 UMI_SAMPLES:  " "
 LANE-REGEX: "L\\d\\d\\d_"
 TMP-DIR: tmp_zymo_one0214
@@ -135,4 +135,5 @@ ANNOTATE-TS:
     strandedness:                  # List your SAMPLES and provide strandedness.
         HBR_100_Collibri_chr21small_A: "+" # [+] If R1 read is the same as a gene sequence: +; If R2 read is the same as a gene sequence: -;
     additional_params: "--cluster" # ["--cluster --verbose"]
-KRAKEN_DB:  /mnt/beegfs/Databases/KRAKEN/20190424_standard
+#KRAKEN_DB:  /mnt/beegfs/Databases/KRAKEN/20190424_standard
+KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/16S_Silva_20190418
