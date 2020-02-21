@@ -15,7 +15,7 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
     params:
@@ -33,27 +33,18 @@ rule cut_first_250_bp:
                 "-Xmx{params.m}g "
 
 
-rule group_reads_by_first250bp:
+checkpoint group_reads_by_first250bp:
     input:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
     output:
-        cls = dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl{id}")
-    params:
-        stem = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl",
-        centroids = tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta",
-    shell:
-        "vsearch   --cluster_fast   {input} --id 0.9 --sizeout  --clusters  {params.stem} --fasta_width 0  --centroids {params.centroids}     "
-
-rule get_centroids_known:
-    input:
-        cls = dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl{id}"),
-    output:
+        directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
     params:
-        centroids = tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta",
-        stem = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cl"
+        stem = "cl",
     shell:
-        "  cp  {params.centroids} {output}  "
+        "mkdir {output[0]} ; vsearch   --cluster_fast   {input} --id 0.97 --sizeout  --clusters  {output[0]}/{params.stem} --fasta_width 0  --centroids {output[1]}     "
+
+
 
 rule get_cluster_reads_ids:
     input:
@@ -65,21 +56,34 @@ rule get_cluster_reads_ids:
 
 rule get_R1_of_clusters:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_ids/{id}.name"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
     shell:
         "seqkit grep -f {input[1]} {input[0]} > {output}"
 
 rule get_R2_of_clusters:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_ids/{id}.name"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq"
     shell:
         "seqkit grep -f {input[1]} {input[0]} > {output}"
+
+rule mark_cluster_in_names:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2.fastq",
+    params:
+        pref = "cl{id}_"
+    shell:
+        "rename.sh in1={input[0]} in2={input[1]} " +
+        "out1={output[0]} out2={output[1]} ow=t prefix={params.pref} "
 
 rule trim_first_unacurate_reaqds_from_R2:
     input:
@@ -113,7 +117,8 @@ rule merge_clustered_reads:
         CONFIG["BBDUK"]["threads"]
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
         "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
-        "mincountseed=1 mincountextend=1 rem k=100 extend2=600 ecct vstrict=t  mininsert=900"
+        "mincountseed=1 mincountextend=1  rem k=210  ecct extend2=900  iterations=20   vstrict=t  " +
+        #"mincountseed=1 mincountextend=1 rem k=200 extend2=600 ecct vstrict=t  mininsert=900" +
         " in2={input[1]} " +
         " threads={threads} " +
         " outu1={output[1]} " +
@@ -126,7 +131,7 @@ rule filter_bySize_and_cut:
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef.fasta",
     params:
-        add =       " minlength=950  ftr=949",
+        add =       " minlength=1000  ftr=999",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -137,9 +142,20 @@ rule filter_bySize_and_cut:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
+def aggregate_group_reads_by_first250bp_input(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_merged_reads/{id}_merged_sizef_cluster.fasta",
+           id=glob_wildcards(os.path.join(checkpoint_output, 'cl{i}')).i)
+
+
 rule collect_16S_fragments:
     input:
-        dynamic(tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef_woident_swarm.fasta"),
+        aggregate_group_reads_by_first250bp_input
     output:
         tmp + "/{stem}_final_contigs.fasta"
     shell:
@@ -206,7 +222,7 @@ rule correctbb:
     output:
         "{stem}_dedupe.fasta",
     shell:
-        "dedupe.sh in={input} out={output}  "
+        "dedupe.sh  s=0 e=20 in={input} out={output}  "
 
 rule dedupe:
     input:
@@ -214,7 +230,7 @@ rule dedupe:
     output:
         "{stem}_correctbb.fasta",
     shell:
-        "tadpole.sh mode=correct  in={input} out={output}  "
+        "tadpole.sh mode=correct ecco=t  in={input} out={output}  "
 
 rule rmidenti:
     input:
@@ -240,7 +256,7 @@ rule cluster_with_swarm:
     output:
         "{stem}_swarm.fasta",
     shell:
-        "swarm  -z  {input} -d 1  -w {output} "
+        "swarm  -z  {input} -d 2  -w {output} "
 
 rule removesinglets:
     input:
@@ -248,7 +264,7 @@ rule removesinglets:
     output:
         "{stem}_wosinglets.fasta",
     shell:
-        "vsearch    --fastx_filter  {input}   --minsize 2   --sizein    --relabel_sha1     --fasta_width 0  --fastaout {output} "
+        "vsearch    --fastx_filter  {input}   --minsize 2   --sizein   --sizeout     --fasta_width 0  --fastaout {output} "
 
 rule denoise:
     input:
@@ -264,9 +280,17 @@ rule cluster:
     output:
         "{stem}_cluster.fasta"
     shell:
-        "cdhit-est -c 0.97 -i {input} -o {output}"
-        #"vsearch     --cluster_size   {input}  --id 0.97 --sizeout  --sizein    --relabel_sha1     --fasta_width 0     --centroids {output} "
-
+        '''
+        set +e
+        vsearch     --cluster_fast   {input}  --id 0.98 --sizeout  --sizein     --fasta_width 0     --centroids {output}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
+        '''
 
 #rule get_final_contigs:
 #    input:
@@ -1052,7 +1076,7 @@ rule run_kraken_on_contigs:
     params:
         db = CONFIG["KRAKEN_DB"]
     shell:
-        "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+        "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input} ; touch {output[0]} ; touch {output[1]}"
 
 rule run_kraken_on_merged_reads:
     input:
@@ -1128,7 +1152,12 @@ rule run_bracken_on_contigs:
         db = CONFIG["KRAKEN_DB"]
     conda: "../envs/metagenome.yaml"
     shell:
-        "bracken -l G -d {params.db} -i {input} -o {output}"
+        '''
+        set +e
+        bracken -l G -d {params.db} -i {input} -o {output}
+        touch {output}
+        exit 0
+        '''
 
 rule run_bracken_on_R1part:
     input:

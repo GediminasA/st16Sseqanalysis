@@ -42,7 +42,7 @@ rule zymo_inserts:
         #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         #expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta", stem=STEMS),
         #tmp + "/Genus_analysis_R1_filtered_fractions.csv",
-        #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
+        tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
         expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
         #tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
 
