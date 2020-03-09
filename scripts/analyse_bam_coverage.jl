@@ -84,7 +84,12 @@ function analyse_pairs!(r1::Array{BAM.Record,1},r2::Array{BAM.Record,1},cont::Di
                 push!(refpos,e)
             end
             tlen = maximum(refpos) - minimum(refpos) + 1
-            fl =  string(BAM.sequence(chosenr2))[1]
+            fl = ""
+            if !reverse
+                fl =  string(BAM.sequence(chosenr2))[1]
+            else
+                fl =  string(BAM.sequence(chosenr2))[end]
+            end
             k = (refn_r2,fl)
             if ! (k in keys(cont))
                 cont[k] = Accumulator{Int64,Int64}()

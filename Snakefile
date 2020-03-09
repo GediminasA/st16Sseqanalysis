@@ -17,6 +17,8 @@ include: "./snakefiles/1_0_download.smk"
 include: "./snakefiles/2_0_fastqc.smk"
 include: "./snakefiles/3_0_processing.smk"
 include: "./snakefiles/4_0_assembly.smk"
+include: "./snakefiles/4_1_qiime.smk"
+include: "./snakefiles/5_0_qc.smk"
 
 
 init_log()
@@ -39,11 +41,12 @@ rule zymo_inserts:
         OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
         OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
+        #OUT + "/picard_all_report.html",
         #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         #expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_centroids.fasta", stem=STEMS),
         #tmp + "/Genus_analysis_R1_filtered_fractions.csv",
-        tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
-        expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
+        #tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
+        #expand(tmp + "/{stem}_finalcontigs_bracken_raport.txt", stem=STEMS),
         #tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
 
 rule all:

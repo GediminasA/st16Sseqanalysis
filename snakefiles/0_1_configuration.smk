@@ -50,7 +50,6 @@ LOGS = OUT+"/"+"LOGS"
 
 # ------------------------------ MACHINE ------------------------------------ #
 
-STAR_THREADS = CONFIG["MAPPING"]["STAR"]["threads"]
 JULIA_THREADS = CONFIG["MACHINE"]["threads_julia"]
 SAMBAMBA_THREADS = CONFIG['MACHINE']['threads_sambamba']
 MEMORY_JAVA = CONFIG["MACHINE"]["memory_java"]

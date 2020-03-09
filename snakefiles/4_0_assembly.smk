@@ -962,6 +962,16 @@ rule map_filtered_reads_on_ref:
     shell:
         "bwa mem -t {threads} {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
 
+rule map_R2_non16S_reads_on_ref:
+    input:
+        OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz"
+    output:
+        tmp + "/{stem}_alignedR2_reads.bam"
+    params:
+        ref = CONFIG["ref4picard"]
+    shell:
+        "bwa mem -t {threads} {params.ref} {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
+
 rule sortbyname:
     input:
         "{stem}.bam"
