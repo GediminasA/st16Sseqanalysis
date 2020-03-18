@@ -3,12 +3,12 @@
 
 rule trim_adapters:
     input:
-        tmp + "/{stem}_R1_001.fastq.gz",
-        tmp + "/{stem}_R2_001.fastq.gz"
+        tmp + "/raw/{stem}_R1_001.fastq.gz",
+        tmp + "/raw/{stem}_R2_001.fastq.gz"
     output:
         LOGS + "/BBDUK/{stem}_contamination.log",
-        temp(tmp + "/{stem}_R1_001Trimmed.fastq.gz"),
-        temp(tmp + "/{stem}_R2_001Trimmed.fastq.gz")
+        tmp + "/{stem}_R1_001Trimmed.fastq.gz",
+        tmp + "/{stem}_R2_001Trimmed.fastq.gz"
     log:
         LOGS + "/BBDUK/trimming_{stem}.log"
     params:
@@ -88,7 +88,7 @@ else:
 
     rule count_reads:
         input:
-            tmp + "/{stem}_R1_001.fastq.gz",
+            tmp + "/raw/{stem}_R1_001.fastq.gz",
             tmp + "/{stem}_R1_001Trimmed.fastq.gz"
         output:
             tmp + "/{stem}_read_counts.txt"

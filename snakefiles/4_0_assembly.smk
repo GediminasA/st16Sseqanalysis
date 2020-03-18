@@ -32,6 +32,12 @@ rule cut_first_250_bp:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
+# rule cluster_r1:
+#     input:
+#         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoise_swarm_wosinglets.fasta"
+#     output:
+#         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
+#     shell: "cp {input} {output}"
 
 checkpoint group_reads_by_first250bp:
     input:
@@ -41,9 +47,28 @@ checkpoint group_reads_by_first250bp:
         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
     params:
         stem = "cl",
-    shell:
-        "mkdir {output[0]} ; vsearch   --cluster_fast   {input} --id 0.97 --sizeout  --clusters  {output[0]}/{params.stem} --fasta_width 0  --centroids {output[1]}     "
-
+        minsizefrac = 0.0001,
+        ini = tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_ini.fasta"
+    shell:'''
+        mkdir {output[0]};
+        min=$(grep ">" {input} | wc -l)
+        echo Detected $min R1 proper reads. Minimum cluster size fraction {params.minsizefrac}
+        minli=$(echo "scale=0;{params.minsizefrac}*$min" | bc )
+        minl=${{minli%.*}}
+        echo Minimum cluster size $minl
+        vsearch   --cluster_fast {input} \
+        --id 0.97 --sizeout  --clusters  {output[0]}/{params.stem} --fasta_width 0 \
+        --centroids {params.ini} ;
+        for cf in `ls {output[0]}/* `
+        do
+            n=$(grep ">" $cf | wc -l)
+            if [ $n -lt $minl ]
+            then
+                rm $cf
+            fi
+        done
+        vsearch    --fastx_filter  {params.ini}   --minsize $minl   --sizein   --sizeout     --fasta_width 0  --fastaout {output[1]}
+         '''
 
 
 rule get_cluster_reads_ids:
@@ -131,7 +156,7 @@ rule filter_bySize_and_cut:
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef.fasta",
     params:
-        add =       " minlength=1000  ftr=999",
+        add =       " minlength=500", #  ftr=999",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
