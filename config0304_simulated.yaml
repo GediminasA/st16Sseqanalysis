@@ -78,6 +78,7 @@ MACHINE:
     threads_bwa: 12
     threads_salmon: 12
     threads_kraken: 12
+    threads_blast: 6
 
 ##############
 # References #
