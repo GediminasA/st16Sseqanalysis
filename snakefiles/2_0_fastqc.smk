@@ -1,19 +1,37 @@
 
 # ------------------------ Raw reads FASTQC  -------------------------------- #
 
-rule fastqc:
+rule fastqc1:
     input:
-        tmp + "/{stem}.fastq.gz"
+        tmp + "/raw/{stem}.fastq.gz"
     output:
-        OUT + "/fastqc_report_htmls_zips/{stem}_fastqc.zip",
-        OUT + "/fastqc_report_htmls_zips/{stem}_fastqc.html"
+        OUT + "/fastqc_report_htmls_raw_zips/{stem}_fastqc.zip",
+        OUT + "/fastqc_report_htmls_raw_zips/{stem}_fastqc.html"
     log:
         LOGS + "/FASTQC/{stem}.log"
     benchmark:
         BENCHMARKS + "/fastqc_{stem}.log"
     params:
         kmer_size = CONFIG["FASTQC"]["kmer_size"],
-        out_dir = OUT + "/fastqc_report_htmls_zips/"
+        out_dir = OUT + "/fastqc_report_htmls_raw_zips/"
+    threads: 1
+    shell:
+        "fastqc {input} -o {params.out_dir} -t {threads} " +
+        "-k {params.kmer_size} 2> {log}"
+
+rule fastqc2:
+    input:
+        tmp + "/{stem}_001Trimmed.fastq.gz",
+    output:
+        OUT + "/fastqc_report_htmls_trimmed_zips/{stem}_001Trimmed_fastqc.zip",
+        OUT + "/fastqc_report_htmls_trimmed_zips/{stem}_001Trimmed_fastqc.html",
+    log:
+        LOGS + "/FASTQC/{stem}.log"
+    benchmark:
+        BENCHMARKS + "/fastqc_{stem}.log"
+    params:
+        kmer_size = CONFIG["FASTQC"]["kmer_size"],
+        out_dir = OUT + "/fastqc_report_htmls_trimmed_zips/"
     threads: 1
     shell:
         "fastqc {input} -o {params.out_dir} -t {threads} " +
@@ -21,7 +39,7 @@ rule fastqc:
 
 rule multiqc_pre:
     input:
-        expand(OUT + "/fastqc_report_htmls_zips/{stem}_R{R}_001_fastqc.zip", stem=STEMS, R=['1','2'])
+        expand(OUT + "/fastqc_report_htmls_raw_zips/{stem}_R{R}_001_fastqc.zip", stem=STEMS, R=['1','2'])
     output:
         MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         directory(MULTIQC_DIR + "/fastqc_report_raw_reads_data")
@@ -32,7 +50,7 @@ rule multiqc_pre:
 
 rule multiqc_pro:
     input:
-        expand(OUT + "/fastqc_report_htmls_zips/{stem}_R{R}_001Trimmed_fastqc.zip", stem=STEMS, R=['1','2'])
+        expand(OUT + "/fastqc_report_htmls_trimmed_zips/{stem}_R{R}_001Trimmed_fastqc.zip", stem=STEMS, R=['1','2'])
     output:
         MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
         directory(MULTIQC_DIR + "/fastqc_report_trimmed_reads_data")

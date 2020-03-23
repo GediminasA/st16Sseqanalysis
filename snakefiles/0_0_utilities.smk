@@ -168,8 +168,8 @@ def get_sample_files_named_pipe_script(sample, debug=True):
 
     r1_files.sort()
     r2_files.sort()
-    r1ft = os.path.join(tmp+'/{0}R1_input_list.sh'.format(sample))
-    r2ft = os.path.join(tmp+'/{0}R2_input_list.sh'.format(sample))
+    r1ft = os.path.join(tmp+'/raw/{0}R1_input_list.sh'.format(sample))
+    r2ft = os.path.join(tmp+'/raw/{0}R2_input_list.sh'.format(sample))
 
     f1 = open(r1ft, 'w')
 
