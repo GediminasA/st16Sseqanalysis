@@ -41,33 +41,29 @@ rule cut_first_250_bp:
 
 checkpoint group_reads_by_first250bp:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2.fasta",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
     output:
         directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
     params:
         stem = "cl",
         minsizefrac = 0.0001,
-        ini = tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_ini.fasta"
+    params:
     shell:'''
         mkdir {output[0]};
-        min=$(grep ">" {input} | wc -l)
+        min=$(seqkit fq2fa {input[1]} | grep ">" | wc -l)
         echo Detected $min R1 proper reads. Minimum cluster size fraction {params.minsizefrac}
         minli=$(echo "scale=0;{params.minsizefrac}*$min" | bc )
         minl=${{minli%.*}}
-        echo Minimum cluster size $minl
-        vsearch   --cluster_fast {input} \
-        --id 0.97 --sizeout  --clusters  {output[0]}/{params.stem} --fasta_width 0 \
-        --centroids {params.ini} ;
-        for cf in `ls {output[0]}/* `
-        do
-            n=$(grep ">" $cf | wc -l)
-            if [ $n -lt $minl ]
-            then
-                rm $cf
-            fi
-        done
-        vsearch    --fastx_filter  {params.ini}   --minsize $minl   --sizein   --sizeout     --fasta_width 0  --fastaout {output[1]}
+        echo Minimum cluster size $minl #
+        echo sorting {input[0]}.gjc
+        sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
+        echo filtering clusters with less than $minl sequences
+        vsearch    --sortbysize {input[0]}   --minsize $minl   --sizein   --sizeout     --fasta_width 0  --output {output[1]}
+        seqkit seq -n {output[1]} | cut -d';' -f1 > {output[1]}.names
+        julia scripts/filter_and_extractnames.jl {output[1]}.names {input[0]}.gjc.sorted {output[0]}
+        rm {input[0]}
          '''
 
 
@@ -262,10 +258,16 @@ rule rmidenti:
         "{stem}.fasta",
     output:
         "{stem}_woident.fasta",
+        "{stem}_woident.fasta.jc",#local clustering at this styep
+        "{stem}_woident.fasta.gjc", #gloval clustering
+    params:
+        uc = "{stem}_woident.fasta.uc", #gloval clustering
     shell:
         '''
         set +e
-        vsearch    --derep_fulllength   {input}   --sizeout   --fasta_width 0  --output {output}
+        vsearch    --derep_fulllength   {input}   --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
+        julia scripts/uc2jc.jl {params.uc} > {output[1]}
+        cp {output[1]}  {output[2]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
         then
@@ -278,11 +280,58 @@ rule rmidenti:
 rule cluster_with_swarm:
     input:
         "{stem}.fasta",
+    params:
+        gjci = "{stem}.fasta.gjc",
+        uco = "{stem}_swarmD{d}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_swarmD{d}.fasta.jc",
+        gjco = "{stem}_swarmD{d}.fasta.gjc",
+        d = "{d}"
     output:
-        "{stem}_swarm.fasta",
-    shell:
-        "swarm  -z  {input} -d 2  -w {output} "
+        "{stem}_swarmD{d}.fasta",
+        log = "{stem}_swarmD{d}.log",
+        out = "{stem}_swarmD{d}.out",
+    #    "{stem}_swarm.fasta.gjc", #gloval clustering
+    threads:
+        CONFIG["MACHINE"]["threads_swarm"]
+    shell:'''
+        swarm  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
+        echo "Creating file: " {params.jco}
+        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        if [ -f {params.gjci} ] ; then
+            echo "Previous clusterings' jc file found - merging two clusterings...."
+            echo combining {params.gjci}  {params.jco} into {params.gjco}
+            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+        else
+            echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
+        fi
+        '''
 
+rule cluster_with_vsize:
+    input:
+        "{stem}.fasta",
+    params:
+        gjci = "{stem}.fasta.gjc",
+        uco = "{stem}_clusterP{d}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_clusterP{d}.fasta.jc",
+        gjco = "{stem}_clusterP{d}.fasta.gjc",
+        d = "{d}"
+    output:
+        "{stem}_clusterP{d}.fasta",
+    #    "{stem}_swarm.fasta.gjc", #gloval clustering
+    threads:
+        CONFIG["MACHINE"]["threads_swarm"]
+    shell:'''
+        vsearch     --cluster_size   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
+        echo "Creating file: " {params.jco}
+        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        if [ -f {params.gjci} ] ; then
+            echo "Previous clusterings' jc file found - merging two clusterings...."
+            echo combining {params.gjci}  {params.jco} into {params.gjco}
+            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+        else
+            echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
+        fi
+        '''
 rule removesinglets:
     input:
         "{stem}.fasta",
@@ -291,31 +340,62 @@ rule removesinglets:
     shell:
         "vsearch    --fastx_filter  {input}   --minsize 2   --sizein   --sizeout     --fasta_width 0  --fastaout {output} "
 
-rule denoise:
-    input:
-        "{stem}.fasta",
-    output:
-        "{stem}_unoise.fasta",
-    shell:
-        "vsearch   --cluster_unoise   {input} --minsize 1 --sizein --sizeout  --relabel_sha1     --fasta_width 0  --centroids {output} "
 
-rule cluster:
+rule remove_small_clusters:
     input:
         "{stem}.fasta",
+    params:
+        gjci = "{stem}.fasta.gjc",
+        jci = "{stem}.fasta.jc",
+        jco = "{stem}_minsize{d}.fasta.jc",
+        no = "{stem}_minsize{d}.fasta.names",
+        gjco = "{stem}_minsize{d}.fasta.gjc",
+        d = "{d}"
     output:
-        "{stem}_cluster.fasta"
-    shell:
-        '''
-        set +e
-        vsearch     --cluster_fast   {input}  --id 0.98 --sizeout  --sizein     --fasta_width 0     --centroids {output}
-        exitcode=$?
-        if [ $exitcode -eq 1 ]
-        then
-            exit 0
+        "{stem}_minsize{d}.fasta",
+    #    "{stem}_swarm.fasta.gjc", #gloval clustering
+    threads:
+        CONFIG["MACHINE"]["threads_swarm"]
+    shell:'''
+        vsearch    --fastx_filter  {input}   --minsize {params.d}   --sizein   --sizeout     --fasta_width 0  --fastaout {output}
+        seqkit seq -n {output} | cut -d';' -f1 > {params.no}
+        if [ -f {params.gjci} ] ; then
+            echo "Previous clusterings' jc file found - merging two clusterings...."
+            julia scripts/subsetjc.jl {params.no} {params.gjci}  > {params.gjco}
+            julia scripts/subsetjc.jl {params.no} {params.jci}  > {params.jco}
         else
-            exit 0
+            echo "Previous clusterings' jc was not  found going without it...."
         fi
         '''
+
+
+rule cluster_with_unoise:
+    input:
+        "{stem}.fasta",
+    params:
+        gjci = "{stem}.fasta.gjc",
+        uco = "{stem}_unoiseM{d}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_unoiseM{d}.fasta.jc",
+        gjco = "{stem}_unoiseM{d}.fasta.gjc",
+        d = "{d}"
+    output:
+        "{stem}_unoiseM{d}.fasta",
+    #    "{stem}_swarm.fasta.gjc", #gloval clustering
+    threads:
+        CONFIG["MACHINE"]["threads_swarm"]
+    shell:'''
+        vsearch     --cluster_unoise   {input}  --minsize  {params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
+        echo "Creating file: " {params.jco}
+        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        if [ -f {params.gjci} ] ; then
+            echo "Previous clusterings' jc file found - merging two clusterings...."
+            echo combining {params.gjci}  {params.jco} into {params.gjco}
+            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+        else
+            echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
+        fi
+        '''
+
 
 #rule get_final_contigs:
 #    input:
