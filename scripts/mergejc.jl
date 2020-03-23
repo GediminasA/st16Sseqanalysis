@@ -8,7 +8,7 @@ for l in readlines(f2)
     map_new[split(parts[1],";")[1]]=split(parts[2],";")[1]
 
 end
-println("Readed in nea mapping")
+println(stderr,"Readed in new mapping")
 skipped = 0
 for l in readlines(f1)
     parts = split(l,"\t")

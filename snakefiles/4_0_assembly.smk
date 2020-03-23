@@ -41,7 +41,7 @@ rule cut_first_250_bp:
 
 checkpoint group_reads_by_first250bp:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99.fasta",
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
     output:
         directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
@@ -282,14 +282,14 @@ rule cluster_with_swarm:
         "{stem}.fasta",
     params:
         gjci = "{stem}.fasta.gjc",
-        uco = "{stem}_swarmD{d}.fasta.uc",#local clustering at this styep
-        jco = "{stem}_swarmD{d}.fasta.jc",
-        gjco = "{stem}_swarmD{d}.fasta.gjc",
-        d = "{d}"
+        uco = "{stem}_swarmD{d,[0-9]+}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_swarmD{d,[0-9]+}.fasta.jc",
+        gjco = "{stem}_swarmD{d,[0-9]+}.fasta.gjc",
+        d = "{d,[0-9]+}"
     output:
-        "{stem}_swarmD{d}.fasta",
-        log = "{stem}_swarmD{d}.log",
-        out = "{stem}_swarmD{d}.out",
+        "{stem}_swarmD{d,[0-9]+}.fasta",
+        log = "{stem}_swarmD{d,[0-9]+}.log",
+        out = "{stem}_swarmD{d,[0-9]+}.out",
     #    "{stem}_swarm.fasta.gjc", #gloval clustering
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
@@ -311,12 +311,12 @@ rule cluster_with_vsize:
         "{stem}.fasta",
     params:
         gjci = "{stem}.fasta.gjc",
-        uco = "{stem}_clusterP{d}.fasta.uc",#local clustering at this styep
-        jco = "{stem}_clusterP{d}.fasta.jc",
-        gjco = "{stem}_clusterP{d}.fasta.gjc",
-        d = "{d}"
+        uco = "{stem}_clusterP{d,[0-9]+}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_clusterP{d,[0-9]+}.fasta.jc",
+        gjco = "{stem}_clusterP{d,[0-9]+}.fasta.gjc",
+        d = "{d,[0-9]+}"
     output:
-        "{stem}_clusterP{d}.fasta",
+        "{stem}_clusterP{d,[0-9]+}.fasta",
     #    "{stem}_swarm.fasta.gjc", #gloval clustering
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
@@ -589,17 +589,32 @@ rule detect_rRNA:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
 
 
-rule copy_final_16S_reads:
+rule remove_primer_sequences_from_R1_and_copy_R2_16S:
     input:
         chose_deduplicated_or_not
     output:
+        LOGS + "/BBDUK/{stem}_finalretrim.log",
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
-    shell:
-        '''
-        cp {input[0]} {output[0]}
-        cp {input[1]} {output[1]}
-        '''
+    log:
+        LOGS + "/BBDUK/finalretrim_{stem}.log"
+    params:
+        ref =       CONFIG["PRIMERS"]["R1_4trim"],
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/trimming_{stem}.log"
+    shell:'''
+        bbduk.sh in={input[0]} out={output[1]} \
+                ref={params.ref} threads={threads} \
+                ktrim=l k=12 restrictleft=40\
+                mink=7 edist=2 \
+                 threads={threads} \
+                stats={output[0]} overwrite=t \
+                -Xmx{params.m}g 2> {log}
+                cp {input[1]} {output[2]} '''
+
 
 rule match_pairs_after_dedup:
     input:
