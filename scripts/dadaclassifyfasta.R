@@ -1,0 +1,24 @@
+library(dada2); packageVersion("dada2")
+library(DECIPHER);
+dbin <- snakemake@params[["db"]]
+dfiltered <- snakemake@params[["dada_filt"]]
+fasta <- snakemake@input[[1]]
+threads <- snakemake@threads[[1]]
+output_tax_table <- snakemake@output[[1]]
+seqs <- getSequences(fasta)
+seqnames <- names(seqs)
+taxid <- assignTaxonomy(seqs, dbin,minBoot=40,tryRC=TRUE,multithread=threads)
+row.names(taxid) <- seqnames
+write.table(taxid, output_tax_table)
+#dna <- DNAStringSet(getSequences(seqtab)) # Create a DNAStringSet from the ASVs
+#load(dbin) # CHANGE TO THE PATH OF YOUR TRAINING SET
+#ids <- IdTaxa(dna, trainingSet, strand="both", processors=threads,threshold=40 , verbose=FALSE) # use all processors
+#ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
+# Convert the output object of class "Taxa" to a matrix analogous to the output from assignTaxonomy
+#taxid <- t(sapply(ids, function(x) {
+#        m <- match(ranks, x$rank)
+#        taxa <- x$taxon[m]
+#        taxa[startsWith(taxa, "unclassified_")] <- NA
+#        taxa
+#}))
+#colnames(taxid) <- ranks; rownames(taxid) <- getSequences(seqtab)

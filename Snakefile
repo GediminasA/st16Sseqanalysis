@@ -17,8 +17,7 @@ include: "./snakefiles/1_0_download.smk"
 include: "./snakefiles/2_0_fastqc.smk"
 include: "./snakefiles/3_0_processing.smk"
 include: "./snakefiles/4_0_assembly.smk"
-include: "./snakefiles/4_1_qiime.smk"
-include: "./snakefiles/4_2_blast.smk"
+include: "./snakefiles/4_1_methagenome.smk"
 include: "./snakefiles/5_0_qc.smk"
 
 
@@ -45,8 +44,10 @@ rule all:
         #OUT + "/picard_all_report.html",
         #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary.tsv", stem=STEMS),
-        #expand(tmp + "/{stem}_final_contigs_blast_summary.tsv", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary.tsv", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary_genus.tsv", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_dada2classify.csv", stem=STEMS),
+        expand(tmp + "/{stem}_final_contigs_blast_summary.tsv", stem=STEMS),
         #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         #expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoise_swarm_wosinglets.fasta", stem=STEMS),
         #tmp + "/Genus_analysis_R1_filtered_fractions.csv",
