@@ -21,7 +21,7 @@ ct = 0
 for l in readlines(f1)
     nm = split(l)[1]
     ct += 1
-    out = "$outdir/cl$ct.names"
+    out = "$outdir/$ct"
     f=open(out,"w")
     for id in map[nm]
         println(f,id)

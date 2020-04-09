@@ -8,12 +8,12 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-INPUT-DIR: /media/root/ngs_nas3/2020_03_10_Zanos_zymo_stag
-SAMPLES:   S1
+INPUT-DIR: /media/root/ngs_nas3/2020_03_30_Geordi_phased_primers 
+SAMPLES:   Zymo-even-2 Zymo-even-1
 UMI_SAMPLES:  "S3"
 LANE-REGEX: "L\\d\\d\\d_"
-TMP-DIR: tmp_zymo_stagered0310strict
-OUT-DIR: output_zymo_stagered0310strict
+TMP-DIR: tmp_zymo_even0331_zymo
+OUT-DIR: output_zymo_even0331_zymo
 SCRATCH: tmp_zymo
 BENCH-DIR: bench_coli
 BENCHMARKS: benchmarks

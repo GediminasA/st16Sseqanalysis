@@ -86,7 +86,8 @@ rule extract_species:
         "{stem}_blast.csv",
         "{stem}_dada2classify.csv",
     output:
-        "{stem}_blast_summary.tsv"
+        "{stem}_blast_summary.tsv",
+        "{stem}_blast_summary_genus.tsv"
     params:
         s = "{stem}"
     shell:

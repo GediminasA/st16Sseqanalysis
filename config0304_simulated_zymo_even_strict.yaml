@@ -127,3 +127,4 @@ DNA_GC:
 
 KRAKEN_DB:  /mnt/beegfs/Databases/KRAKEN/16S_Greengenes_20190418
 BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v132_train_set.fa.gz

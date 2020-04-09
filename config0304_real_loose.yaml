@@ -12,8 +12,8 @@ INPUT-DIR: /media/root/ngs_nas3/2020_03_10_Zanos_zymo_stag
 SAMPLES:   S1
 UMI_SAMPLES:  "S3"
 LANE-REGEX: "L\\d\\d\\d_"
-TMP-DIR: tmp_zymo_stagered0310strict
-OUT-DIR: output_zymo_stagered0310strict
+TMP-DIR: tmp_zymo_stagered0310loose
+OUT-DIR: output_zymo_stagered0310loose
 SCRATCH: tmp_zymo
 BENCH-DIR: bench_coli
 BENCHMARKS: benchmarks
@@ -79,9 +79,9 @@ MACHINE:
     threads_bwa: 12
     threads_salmon: 12
     threads_kraken: 12
-    threads_blast: 6
-    threads_swarm: 6
-    threads_dada: 6
+    threads_blast: 12
+    threads_swarm: 12
+    threads_dada: 12
 
 ##############
 # References #
@@ -109,7 +109,7 @@ BBDUK:
     minlength: 250
     maxns: 0
     qtrim: r
-    trimq: 20
+    trimq: 15
     additional_params: "tpe tbo"
 
 ###############

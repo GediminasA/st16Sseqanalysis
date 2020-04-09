@@ -7,6 +7,7 @@ import yaml
 import os
 
 
+
 def init_log():
     try:
         with open(LOG_CONFIG, 'rt') as f:
