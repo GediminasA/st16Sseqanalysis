@@ -22,7 +22,7 @@ read_name = fill("",size(df)[1])
 genus = fill("",size(df)[1])
 genus_species = fill("",size(df)[1])
 for i in 1:size(df)[1]
-    sizes[i] = parse(Int64,split(df.qseqid[i],"=")[2])
+    sizes[i] = parse(Int64,split(split(df.qseqid[i],"=")[2],";")[1]) #swarm attaches ; to the end of name
     read_name[i] = split(df.qseqid[i],";")[1]
     species[i] = String(split(df.sseqid[i],":")[1])
     genus[i] = contig_genus_map[df.qseqid[i]]
@@ -33,6 +33,7 @@ df.species = species
 df.read_name = read_name
 df.genus = genus
 df.genus_species = genus_species
+
 
 dfout = DataFrame(Genus_Species = Array{String,1}(),
     Maximum_length = Array{Int64,1}(),

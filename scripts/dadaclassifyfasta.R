@@ -18,7 +18,7 @@ for (s in seqs)
   counter = counter + 1
   seqs[counter] <- substr(s,1,limit)
 }
-idtax <- TRUE
+idtax <- FALSE
 
 if (idtax ) {
 dna <- DNAStringSet(seqs) # Create a DNAStringSet from the ASVs
@@ -36,7 +36,7 @@ taxid <- t(sapply(ids, function(x) {
 taxid <- taxid[,-7]
 colnames(taxid) <- ranks4out
 } else {
-taxid <- assignTaxonomy(seqtab, dbin,minBoot=40,tryRC=TRUE,multithread=threads)
+taxid <- assignTaxonomy(seqs, dbin,minBoot=40,tryRC=TRUE,multithread=threads,verbose=TRUE)
 }
 row.names(taxid) <- seqnames
 write.table(taxid, output_tax_table)
