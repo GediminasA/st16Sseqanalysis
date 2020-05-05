@@ -18,8 +18,10 @@ include: "./snakefiles/2_0_fastqc.smk"
 include: "./snakefiles/3_0_processing.smk"
 include: "./snakefiles/4_0_assembly.smk"
 include: "./snakefiles/4_1_methagenome.smk"
+include: "./snakefiles/4_2_prepare_reads.smk"
+include: "./snakefiles/4_3_sanitise_contigs.smk"
 include: "./snakefiles/5_0_qc.smk"
-
+include: "./snakefiles/4_4_sanitise_contigs_clusters.smk"
 
 init_log()
 wlogger = logging.getLogger("custom_workflow")
@@ -37,6 +39,9 @@ localrules: filterout_r1primer_sequence_having_reads_on16S
 rule all:
     input:
         #OUT + "/INSERT_SIZE/all.csv",
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
+        expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_cluster_quant.csv",stem=STEMS),
         #OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
@@ -44,8 +49,9 @@ rule all:
         #OUT + "/picard_all_report.html",
         #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-        #expand(tmp + "/{stem}_final_list.txt", stem=STEMS),
-        expand(tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids_blast_summary_genus.tsv", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids.fasta", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary_genus.tsv", stem=STEMS),
+        #expand(tmp + "/{stem}_pairedreads_bracken_raport.txt", stem=STEMS),
         #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_dada2classify.csv", stem=STEMS),
         #expand(tmp + "/{stem}_final_list.txt", stem=STEMS),
         #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",

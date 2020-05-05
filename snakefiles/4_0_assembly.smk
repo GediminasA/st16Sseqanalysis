@@ -7,6 +7,9 @@ def choose_err_cor(wildcards):
     else:
         return(OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz")
 
+
+
+
 #rule cluster the cut first 250
 
 
@@ -15,63 +18,137 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz"
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
     params:
-        add =       " ftr=249  ",
+        add =       "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/trimming_{stem}.log"
     shell:
-        "bbduk.sh in={input[0]} out={output[0]} " +
+        "bbduk.sh in={input[0]} out={output[1]} " +
                 " threads={threads} " +
-                "{params.add} " +
+                " minlength=240 " +
+                " {params.add} " +
                 " overwrite=t " +
-                "-Xmx{params.m}g "
+                "-Xmx{params.m}g " +
+                " ; seqkit fq2fa {output[1]} > {output[0]} "
+
+rule cut_first_250_bpdev:
+    input:
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev.fastq.gz",
+    params:
+        add =       "      minlen=260 ",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/trimming_{stem}.log"
+    shell:
+        "bbduk.sh in={input[0]} out={output[1]} " +
+                " threads={threads} " +
+                " {params.add} " +
+                " overwrite=t " +
+                "-Xmx{params.m}g " +
+                " ; seqkit fq2fa {output[1]} > {output[0]} "
+rule part:
+        input:
+            "{stem}.fasta"
+        output:
+            "{stem}_part.fasta"
+        params:
+            nmb = 30000
+        shell:
+            "seqkit sample -w 0 -n {params.nmb} {input} > {output}  "
+
+
 
 rule cluster_r1:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident.fasta"
-        #tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoise_swarm_wosinglets.fasta"
+        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_matching_clusteredR2_woident_unoiseM1_swarmD1.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP98.fasta",
     output:
         tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids.fasta"
     shell: "cp {input} {output}"
 
+####deduplication based on R1:
+
+rule get_R2_fasta:
+    input:
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2.fasta",
+    shell:
+        "seqkit fq2fa -w0 {input} > {output}  "
+
+rule get_matchingR1centroids:
+    input:
+        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD1.fasta",
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2.fasta",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_matching_clusteredR2.fasta",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2_wosizes.fasta",
+    params:
+        gjc = tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2.fasta.gjc",
+    threads: 10
+    shell:
+       '''
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/get_matching_R2_centroid.jl  -c {params.gjc} -o {output[0]} -i {input[1]}
+        vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
+        repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
+       '''
+## start collecting
+
+
+
+
 checkpoint group_reads_by_first250bp:
     input:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99.fasta",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99_dada2classify.csv",
     output:
         directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
-        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta"
+        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
     params:
         stem = "cl",
-        minsizefrac = 0.0001,
-    params:
+        minsizefrac = 0.001,
     shell:'''
         mkdir {output[0]};
-        min=$(seqkit fq2fa {input[1]} | grep ">" | wc -l)
-        echo Detected $min R1 proper reads. Minimum cluster size fraction {params.minsizefrac}
-        minli=$(echo "scale=0;{params.minsizefrac}*$min" | bc )
-        minl=${{minli%.*}}
-        echo Minimum cluster size $minl #
         echo sorting {input[0]}.gjc
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
-        echo filtering clusters with less than $minl sequences
-        vsearch    --sortbysize {input[0]}   --minsize $minl   --sizein   --sizeout     --fasta_width 0  --output {output[1]}
+        vsearch    --sortbysize {input[0]}   --minsize 1   --sizein   --sizeout     --fasta_width 0  --output {output[1]}
         seqkit seq -n {output[1]} | cut -d';' -f1 > {output[1]}.names
-        julia scripts/filter_and_extractnames.jl {output[1]}.names {input[0]}.gjc.sorted {output[0]}
+        julia scripts/filter_and_extractnames_withgenus.jl {output[1]}.names {input[0]}.gjc.sorted {input[2]} {output[0]} {params.minsizefrac}
          '''
 
-
+checkpoint group_reads_by_first250bpdev:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev_woident_clusterL99_swarmD1_blast_summary_genus.tsv",
+    output:
+        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_cluster_quant.csv",
+    shell:'''
+         cp {input} {output}
+         '''
 
 rule get_R1_of_clusters:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
+       #i OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
@@ -80,7 +157,9 @@ rule get_R1_of_clusters:
 
 rule get_R2_of_clusters:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq"
@@ -93,7 +172,7 @@ rule trim_first_unacurate_reaqds_from_R2:
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq"
     params:
-        add =       " ftl=20 ",
+        add =       " ftl=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -133,96 +212,17 @@ rule merge_clustered_reads:
     scripts/run_bbmerge.sh -1 {input[0]} -2 {input[1]} -s {params.stem} -o {output} -t {threads}
     '''
 
-rule filter_bySize_and_cut:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged.fasta",
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef.fasta",
-    params:
-        add =       " minlength=250", #  ftr=999",
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    shell:
-        "bbduk.sh in={input[0]} out={output[0]} " +
-                " threads={threads} " +
-                "{params.add} threads={threads} " +
-                " overwrite=t " +
-                "-Xmx{params.m}g "
-
-rule get_final_contigs:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef_woN_woident_swarmD2_clusterL97.fasta"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta"
-    shell:
-        "cp {input} {output}"
 
 
-rule create_bwa_index:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta.sa"
-    shell:
-        "bwa index {input}"
-
-rule map_reads_on_contigs:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta.sa",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.bam" ,
-    threads: CONFIG["MACHINE"]["threads_bwa"]
-    shell:'''
-    set +e
-    bwa mem -t {threads} {input[0]} {input[2]} {input[3]} | samtools view -b | samtools sort -n  > {output}
-    exitcode=$?
-    if [ $exitcode -eq 139 ]
-        then
-            exit 0
-    fi
-    exit 0
-    '''
-
-
-rule filter_proper_pairs:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.bam" ,
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_proper_pairs.bam" ,
-    shell:
-        "samtools view -b -f2 {input} > {output}"
-
-rule quantify_centroids:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.bam" ,
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta",
-    threads: CONFIG["MACHINE"]["threads_salmon"]
-    params:
-        out_dir = tmp + "/16S_amplicons/salmon_{stem}_{id}"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_salmon.csv",
-    shell:'''
-    set +e
-    salmon quant --meta -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}  --posBias
-    mv {params.out_dir}/quant.sf {output}
-    rm -r {params.out_dir}
-    exit 0
-    '''
-
-def aggregate_group_reads_by_first250bp_input(wildcards):
+def aggregate_ref_cleaned_reads(wildcards):
     '''
     aggregate the file names of the random number of files
     generated at the  step
     '''
     checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
     sample = wildcards.stem
-    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids.fasta" ,
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_refbasedclean.fasta" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
-
 
 def aggregate_salmon(wildcards):
     '''
@@ -234,11 +234,9 @@ def aggregate_salmon(wildcards):
     return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_salmon.csv" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 
-
-rule collect_16S_fragments:
+rule collect_output:
     input:
-        aggregate_salmon,
-        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_dada2classify.csv",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_statistics_percontig.csv"
     output:
         tmp + "/{stem}_final_list.txt"
     shell:'''
@@ -366,7 +364,11 @@ rule cluster_with_swarm:
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
     shell:'''
-        swarm  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
+        fp=""
+        if [ {params.d} -eq 1  ] ; then
+            fp="-f"
+        fi
+        swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo "Creating file: " {params.jco}
         julia scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
@@ -400,6 +402,7 @@ rule cluster_with_vsize:
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
     shell:'''
+        set +e
         vsearch     --cluster_size   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
         julia scripts/uc2jc.jl {params.uco} > {params.jco}
@@ -427,7 +430,7 @@ rule cluster_with_vlength:
         gjci = "{stem}.fasta.gjc",
         uco = "{stem}_clusterL{d,[0-9]+}.fasta.uc",#local clustering at this styep
         jco = "{stem}_clusterL{d,[0-9]+}.fasta.jc",
-        gjco = "{stem}_clusteL{d,[0-9]+}.fasta.gjc",
+        gjco = "{stem}_clusterL{d,[0-9]+}.fasta.gjc",
         d = "{d,[0-9]+}"
     output:
         "{stem}_clusterL{d,[0-9]+}.fasta",
@@ -436,9 +439,7 @@ rule cluster_with_vlength:
         CONFIG["MACHINE"]["threads_swarm"]
     shell:'''
         set +e
-        vsearch     --cluster_fast  {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output} ;
-        exitcode=$?
-        echo "AAAAAAAAAAA" $exitcode
+        vsearch     --cluster_fast   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
         julia scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
@@ -448,8 +449,15 @@ rule cluster_with_vlength:
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
-        exit 0
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
         '''
+
 
 rule removesinglets:
     input:
@@ -460,18 +468,19 @@ rule removesinglets:
         "vsearch    --fastx_filter  {input}   --minsize 2   --sizein   --sizeout     --fasta_width 0  --fastaout {output} "
 
 
+
 rule remove_small_clusters:
     input:
         "{stem}.fasta",
     params:
         gjci = "{stem}.fasta.gjc",
         jci = "{stem}.fasta.jc",
-        jco = "{stem}_minsize{d}.fasta.jc",
-        no = "{stem}_minsize{d}.fasta.names",
-        gjco = "{stem}_minsize{d}.fasta.gjc",
-        d = "{d}"
+        jco = "{stem}_minsize{d,[0-9]+}.fasta.jc",
+        no = "{stem}_minsize{d,[0-9]+}.fasta.names",
+        gjco = "{stem}_minsize{d,[0-9]+}.fasta.gjc",
+        d = "{d,[0-9]+}"
     output:
-        "{stem}_minsize{d}.fasta",
+        "{stem}_minsize{d,[0-9]+}.fasta",
     #    "{stem}_swarm.fasta.gjc", #gloval clustering
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
@@ -493,12 +502,12 @@ rule cluster_with_unoise:
         "{stem}.fasta",
     params:
         gjci = "{stem}.fasta.gjc",
-        uco = "{stem}_unoiseM{d}.fasta.uc",#local clustering at this styep
-        jco = "{stem}_unoiseM{d}.fasta.jc",
-        gjco = "{stem}_unoiseM{d}.fasta.gjc",
-        d = "{d}"
+        uco = "{stem}_unoiseM{d,[0-9]+}.fasta.uc",#local clustering at this styep
+        jco = "{stem}_unoiseM{d,[0-9]+}.fasta.jc",
+        gjco = "{stem}_unoiseM{d,[0-9]+}.fasta.gjc",
+        d = "{d,[0-9]+}"
     output:
-        "{stem}_unoiseM{d}.fasta",
+        "{stem}_unoiseM{d,[0-9]+}.fasta",
     #    "{stem}_swarm.fasta.gjc", #gloval clustering
     threads:
         CONFIG["MACHINE"]["threads_swarm"]
@@ -728,7 +737,7 @@ rule remove_primer_sequences_from_R1_and_copy_R2_16S:
     shell:'''
         bbduk.sh in={input[0]} out={output[1]} \
                 ref={params.ref} threads={threads} \
-                ktrim=l k=12 restrictleft=40\
+                ktrim=l k=12 restrictleft=50\
                 mink=7 edist=2 \
                  threads={threads} \
                 stats={output[0]} overwrite=t \
