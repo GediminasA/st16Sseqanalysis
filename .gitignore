@@ -1,4 +1,11 @@
-./.snakemake
-./.snakemake/**
+.snakemake
+.snakemake/**
 *.swp
 *.swo
+out_*
+output_*
+tmp_*
+log_*
+output_*
+dependencies
+dependencies/**
