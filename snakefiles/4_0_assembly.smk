@@ -115,6 +115,7 @@ rule get_matchingR1centroids:
 
 
 
+
 checkpoint group_reads_by_first250bp:
     input:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99.fasta",
@@ -214,6 +215,16 @@ rule merge_clustered_reads:
 
 
 
+def aggregate_ref_cleaned1(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1.fasta" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
 def aggregate_ref_cleaned_reads(wildcards):
     '''
     aggregate the file names of the random number of files
@@ -231,7 +242,17 @@ def aggregate_salmon(wildcards):
     '''
     checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
     sample = wildcards.stem
-    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_salmon.csv" ,
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_salmon.csv" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
+def aggregate_salmon2(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_salmon2.csv" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 
 rule collect_output:

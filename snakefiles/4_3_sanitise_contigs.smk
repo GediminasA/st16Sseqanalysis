@@ -142,6 +142,72 @@ rule remove_chimu3:
 
 
 
+
+
+
+
+rule get_contigs_for_cleanup:
+    input:
+        aggregate_ref_cleaned1
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+    shell:
+        '''
+        cat {input} > {output[0]}
+        '''
+
+rule map_reads_on_mergedcontigs_4_cleaning:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta.rev.2.bt2",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.bam"
+    threads: CONFIG["MACHINE"]["threads_bwa"]
+    shell:'''
+    bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -f 2 -q 1 -b | samtools sort -n  > {output}
+    '''
+
+rule quantify_contigs_4_cleaning:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.bam",
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+    threads: CONFIG["MACHINE"]["threads_salmon"]
+    params:
+        out_dir = tmp + "/16S_amplicons/contigs_sanitisation/salmon_{stem}"
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",
+    shell:
+        "salmon quant  -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir} --posBias   --biasSpeedSamp 1 --forgettingFactor 1.0 --useEM    ; mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}"
+
+rule remove_first_250:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_woConsPart.fasta"
+    params:
+        ftl = 250
+    shell:
+        "bbduk.sh in={input} out={output} ftl={params.ftl}"
+
+
+
+rule map_contigs_on_contigs:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_woConsPart.fasta"
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.bam"
+    threads:
+        CONFIG["MACHINE"]["threads_bwa"]
+    shell:
+        ''' bwa index {input[0]} ;
+bwa mem -a {input[0]} {input[1]} | samtools view -b | samtools sort  > {output} ; samtools index {output}
+
+'''
+##Quantification#
+
 rule get_contigs_for_quant:
     input:
         aggregate_ref_cleaned_reads
