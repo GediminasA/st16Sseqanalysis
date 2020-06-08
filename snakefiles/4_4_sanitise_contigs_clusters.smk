@@ -96,33 +96,33 @@ rule create_bowtie2_index:
 
 rule map_reads_on_contigs:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta.rev.2.bt2",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta.rev.2.bt2",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.bam" ,
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.bam" ,
     threads: CONFIG["MACHINE"]["threads_bwa"]
     shell:'''
-    bowtie2  -X 2000   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort -n  > {output}
+    bowtie2  -X 2000   --very-fast     -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort -n  > {output}
     '''
 
 rule get_salmon_index4centroids:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
     output:
-        directory(tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_salmon_idx"),
+        directory(tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_salmon_idx"),
     threads: CONFIG["MACHINE"]["threads_salmon"]
     shell:
         "salmon index -p {threads} --transcripts {input} --index  {output}"
 
 rule quantify_contigs_rankingi2:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_salmon_idx",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_salmon_idx",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_salmon2.csv",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_salmon2.csv",
     params:
         out_dir = tmp + "/16S_amplicons/salmon2_{stem}_{id}"
     threads: CONFIG["MACHINE"]["threads_salmon"]
@@ -132,32 +132,58 @@ rule quantify_contigs_rankingi2:
          -2 {input[2]} \
          --meta -p {threads} \
          --output {params.out_dir} \
-         --gcBias --seqBias --discardOrphansQuasi --validateMappings ;
+          --validateMappings --mimicStrictBT2   ;
          mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}
 '''
 
 rule filter_proper_pairs:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.bam" ,
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.bam" ,
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_proper_pairs.bam" ,
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_proper_pairs.bam" ,
     shell:
-        "samtools view  -b -f2 {input} > {output}"
+        "samtools view  -b -q 1 -f 2  {input} > {output}"
 
 rule quantify_centroids:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_proper_pairs.bam" ,
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_proper_pairs.bam" ,
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
     threads: CONFIG["MACHINE"]["threads_salmon"]
     params:
-        out_dir = tmp + "/16S_amplicons/salmon_{stem}_{id}"
+        out_dir = tmp + "/16S_amplicons/salmon_{stem}_{id}_clean"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_salmon.csv",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_salmon.csv",
     shell:'''
     set +e
-    salmon quant --meta -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}  --posBias
+    salmon quant -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}   --posBias   --biasSpeedSamp 1 --forgettingFactor 1.0 --useEM
     mv {params.out_dir}/quant.sf {output}
     rm -r {params.out_dir}
     exit 0
+    '''
+
+rule  merge_salmon_outputs:
+    input:
+        aggregate_salmon
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv"
+    shell:'''
+    head -n 1 {input[0]} > {output}
+    for f in {input}
+    do
+        tail -n +2  $f >> {output}
+    done
+    '''
+
+rule  merge_salmon2_outputs:
+    input:
+        aggregate_salmon2
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon2.csv"
+    shell:'''
+    head -n 1 {input[0]} > {output}
+    for f in {input}
+    do
+        tail -n +2  $f >> {output}
+    done
     '''
 

@@ -8,7 +8,7 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-SAMPLES:  Zymo1-2X-65C_S6 #Zymo1idealised Zymo1-2X-55C_S2
+SAMPLES:  Zymo1-2X-65C_S6 #Zymo1-2X-55C_S2 Zymo1-1X-65C_S5
 INPUT-DIR: /media/root/ngs_nas3/2019_09_23_16S_v3/190920_M02432_0378_000000000-CFYTG/Data/Intensities/BaseCalls
 UMI_SAMPLES:  "S3"
 LANE-REGEX: "L\\d\\d\\d_"

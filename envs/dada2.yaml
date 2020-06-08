@@ -1,0 +1,9 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - bioconductor-dada2
+ - bioconductor-decipher
+ - bioconductor-phyloseq
+ - r-phangorn
+ - r-svglite

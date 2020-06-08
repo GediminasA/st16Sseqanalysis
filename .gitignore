@@ -9,3 +9,5 @@ log_*
 output_*
 dependencies
 dependencies/**
+logs/
+logs/**
