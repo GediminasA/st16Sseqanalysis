@@ -125,41 +125,71 @@ function main()
     add_argument!(parser, "--contig","-c", help = "Contig",type = String)
     add_argument!(parser, "--genus","-g", help = "Genus",type = String)
     args = parse_args(parser)
-    genus_assigns = parse_genus_info(args.genus)
+    #Not command line parameters
     min_al_frac = 0.7
-    ends = Dict{String,Array{Int64,1}}()
-
+    
+    #dat of all matches on reference will be collected for filtering
+    matches = DataFrame(Contig_ID = Array{String,1}(),
+		        Ref_ID = Array{String,1}(),
+			Match_length = Array{Int64,1}(),
+			Identity = Array{Float64,1}(),
+			Coverage = Array{Float64,1}(),
+			Contig_start = Array{Int64,1}(), 
+			Contig_end = Array{Int64,1}(), 
+			Ref_start = Array{Int64,1}(), 
+			Ref_end = Array{Int64,1}()) 
+			
+    genus_assigns = parse_genus_info(args.genus)
+    costmodel = BioAlignments.CostModel(match=0, mismatch=1, insertion=1, deletion=1);
     testseqs =  parse_fasta(args.contig)
-
-    matched_contigs = Dict{String,Array{String,1}}()
+    ref =  parse_fasta(args.ref)
     reader = open(BAM.Reader,args.inbam,index = args.inbam*".bai")
+    
     for record in reader
         if BAM.ismapped(record) #&& SAM.isprimary(record)
+            pos = BAM.position(record)
+            seq = BAM.sequence(record)
+            rpos = BAM.rightposition(record)
             aln = BioAlignments.BAM.alignment(record)
             s = first(aln.anchors).refpos
             e = last(aln.anchors).refpos
-            l = abs(s-e)+1
+            l = abs(s-e)
             rn = BAM.refname(record)
 	    qual = BioAlignments.BAM.mappingquality(record)
 	    tempname = BAM.tempname(record)
 	    genus = genus_assigns[split(tempname,"_")[1]]
 	    real_length = length(testseqs[BAM.tempname(record)])
-	    tempname = BAM.tempname(record)*":$l"
-	    ff = findfirst(lowercase(genus),lowercase(rn))
-	    if ff != nothing 
-		if (l/real_length >= min_al_frac)  && (ff.start==1) 
-		    if !(rn in keys(ends))
-			ends[rn] = Array{Int64,1}()
-			matched_contigs[rn] = Array{String,1}()
-		    end
-		    push!(ends[rn],e)
-		    push!(matched_contigs[rn],tempname)
-		end
-	    end
+	    tempname = BAM.tempname(record)
+	    t_pos=BioAlignments.ref2seq(aln,pos)
+	    t_rpos=BioAlignments.ref2seq(aln,rpos)
+	    rtseq = ref[rn][pos:rpos]
+	    tseq = testseqs[tempname][t_pos[1]:t_rpos[1]]
+	    
+	    #println("PAIR: \n>r\n$rtseq\n>t\n$tseq\n---------------")
+	    pairalnres = BioAlignments.pairalign(BioAlignments.EditDistance(),rtseq,tseq,costmodel)
+	    pairaln = BioAlignments.alignment(pairalnres)
+	    matched = BioAlignments.count_matches(pairaln)
+	    idfrac = matched/l
+	    lfrac = l/real_length
+	    df_row=[tempname,rn,l,idfrac,lfrac,t_pos[1],t_rpos[1],pos,rpos]
+	    push!(matches,df_row)
+	    
+	    #ff = findfirst(lowercase(genus),lowercase(rn))
+	    #if ff != nothing 
+	#	if (l/real_length >= min_al_frac)  && (ff.start==1) 
+	#	    if !(rn in keys(ends))
+	#		ends[rn] = Array{Int64,1}()
+	#		matched_contigs[rn] = Array{String,1}()
+	#	    end
+	#	    push!(ends[rn],e)
+	#	    push!(matched_contigs[rn],tempname)
+	#	end
+	 #   end
         end
     end
     close(reader)
-
+    print(matches)
+    exit()
     seqs  = parse_fasta(args.ref)
     inidata  = DataFrame(Species = Array{String,1}(), Contig = Array{String,1}(),Maximum_length = Array{Int64,1}(),Assemblies = Array{String,1}())
     fo = open(args.output,"w")
@@ -172,9 +202,12 @@ function main()
 	    parts = split(mc,";")
 	    push!(choose,(  parts[1],parse(Int64,split(parts[2],":")[2])  ))
 	end
+
 	sort!(choose,by=x->x[2],rev=true)
+	print(choose," ",k)
+	exit()
 	println(fo,choose[1][1]*";")
-	#println(stderr,choose[1][1])
+	println(stderr,"Chosen: ",choose[1][1])
     end
     close(fo)
 end

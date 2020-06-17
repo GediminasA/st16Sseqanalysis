@@ -251,7 +251,7 @@ rule get_salmon_index4contigs:
     input:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta",
     output:
-        directory(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_salon_idx"),
+        directory(tmp + "/16S_amplicons/contigs_quantification/{stem}_cluster_salon_idx"),
     threads: CONFIG["MACHINE"]["threads_salmon"]
     shell:
         "salmon index -p {threads} --transcripts {input} --index  {output}"
@@ -290,11 +290,11 @@ rule deuplicte:
 
 rule process_bam:
     input:
-        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.bam",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_sortbyname.bam",
     output:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_proc.bam",
     shell:
-        " samtools view   -b   {input} > {output} ; samtools index {output} "
+        " samtools view   -b   {input} > {output} "
 
 
 
@@ -314,7 +314,7 @@ rule quantify_contigs_final:
 
 rule quantify_contigs_rankings_final2:
     input:
-        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_salon_idx",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_cluster_salon_idx",
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
     output:

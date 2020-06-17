@@ -18,13 +18,13 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
     params:
-        add =       "  ftr=239 maxns=0 ",
+        add =       "  ftr=249 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -33,7 +33,7 @@ rule cut_first_250_bp:
     shell:
         "bbduk.sh in={input[0]} out={output[1]} " +
                 " threads={threads} " +
-                " minlength=240 " +
+                " minlength=250 " +
                 " {params.add} " +
                 " overwrite=t " +
                 "-Xmx{params.m}g " +
@@ -71,15 +71,39 @@ rule part:
             "seqkit sample -w 0 -n {params.nmb} {input} > {output}  "
 
 
-
-rule cluster_r1:
+###################USED FOR TESTING#########################################
+rule get_testing_file:
     input:
+        "datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
         #tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_matching_clusteredR2_woident_unoiseM1_swarmD1.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP98.fasta",
+        #tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP98.fasta",
     output:
-        tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids.fasta"
+        tmp + "/testing_clustering/contigs.fasta"
     shell: "cp {input} {output}"
 
+rule cut_first_250_4test:
+    input:
+        tmp + "/testing_clustering/{stem}.fasta"
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
+    output:
+        tmp + "/testing_clustering/{stem}_250.fasta"
+    params:
+        add =       "  ftr=249 maxns=0 ",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+                " threads={threads} " +
+                " minlength=240 " +
+                " {params.add} " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
+
+rule test_clustering_and_assignment:
+    input:
+        "tests/run1_tmp/testing_clustering/contigs_250_woident_swarmD2_clusterP99_dada2classify.csv"
+#############################################################################
 ####deduplication based on R1:
 
 rule get_R2_fasta:

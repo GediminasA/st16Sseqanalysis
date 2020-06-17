@@ -10,6 +10,7 @@ seqnames <- names(seqs)
 counter = 0
 for (s in seqs)
 {
+  #limit = 250
   limit = 250
   l <- nchar(s)
   if ( l < limit ) {
@@ -23,7 +24,7 @@ idtax <- FALSE
 if (idtax ) {
 dna <- DNAStringSet(seqs) # Create a DNAStringSet from the ASVs
 load(dbin) # CHANGE TO THE PATH OF YOUR TRAINING SET
-ids <- IdTaxa(dna, trainingSet, strand="both", processors=threads,threshold=40 , verbose=TRUE) # use all processors
+ids <- IdTaxa(dna, trainingSet, strand="both", processors=threads,threshold=30 , verbose=TRUE) # use all processors
 ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
 ranks4out <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus") # ranks of interest
 # Convert the output object of class "Taxa" to a matrix analogous to the output from assignTaxonomy
