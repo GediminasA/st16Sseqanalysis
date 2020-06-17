@@ -76,13 +76,12 @@ rule analyse_centroids_on_reference:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.names"
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv",
     params:
         ref = CONFIG["ref"],
         genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cluster_genus_size.csv"
     shell:'''
-        julia scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[1]}
-        seqkit grep -r -f  {output[1]} {input[1]} > {output[0]}
+        julia scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
         '''
 
 
