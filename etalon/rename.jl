@@ -13,7 +13,9 @@ function run()
     end
 
     outf=open(out,"w")
+    print(outf,text)
     close(outf)
+
 end
 
 run()
