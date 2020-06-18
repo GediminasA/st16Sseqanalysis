@@ -116,11 +116,17 @@ function determine_detectable_number(dfs::DataFrame,seqs::Dict{String,String})
 end
 
 "Write to fasta from dictionary"
-function fasta_from_dict(out_f::String,seqs::Dict{String,String})
+function fasta_from_dict(out_f::String,seqs::Dict{String,String};cut_end=0)
     f = open(out_f,"w")
+
     for k in keys(seqs)
-	s = seqs[k]
+	if cut_end == 0
+	    s = seqs[k]
+	else
+	    s = seqs[k][1:cut_end]
+	end
 	print(f,">$k\n$s\n")
+	
     end
     close(f)
 end
@@ -206,6 +212,7 @@ function main()
     matches_expected = @where(matches, :Expected_genus .== 1)
     CSV.write(args.output*".info.csv", matches_expected,delim='\t')
     ref_c_ds = groupby(matches_expected,:Ref_ID)
+    lens =Array{Int64,1}()
     for ref_c_d in ref_c_ds
 	df = DataFrame(ref_c_d)
 	df = @where(df,:Coverage_contig .>= min_al_idfrac, :Identity .>= min_al_idfrac)
@@ -214,10 +221,11 @@ function main()
 	if write_ref_seq
 	    out_seqs[s.Contig_ID] = ref[s.Ref_ID][s.Ref_start:s.Ref_end]
 	else
-	    out_seqs[s.Contig_ID] = testseqs[s.Contig_ID][s.Contig_start:s.Contig_end]
+	    out_seqs[s.Contig_ID] = testseqs[s.Contig_ID]#[s.Contig_start:s.Contig_end]
 	end
+	push!(lens,length(testseqs[s.Contig_ID]))
     end
-    fasta_from_dict(args.output,out_seqs)
+    fasta_from_dict(args.output,out_seqs)#,cut_end = minimum(lens))
 end
 
 main()

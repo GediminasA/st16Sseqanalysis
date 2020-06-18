@@ -18,13 +18,15 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
-        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
+       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+       # OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
+       # OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
+       #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
     params:
-        add =       "  ftr=249 maxns=0 ",
+        add =       "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -33,7 +35,7 @@ rule cut_first_250_bp:
     shell:
         "bbduk.sh in={input[0]} out={output[1]} " +
                 " threads={threads} " +
-                " minlength=250 " +
+                " minlength=240 " +
                 " {params.add} " +
                 " overwrite=t " +
                 "-Xmx{params.m}g " +
@@ -74,9 +76,10 @@ rule part:
 ###################USED FOR TESTING#########################################
 rule get_testing_file:
     input:
-        "datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
-        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_matching_clusteredR2_woident_unoiseM1_swarmD1.fasta",
-        #tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP98.fasta",
+        "tmp_zymo_0615_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        # "/mnt/beegfs/ga/bracken_ribo_count/datasets/testingdata/0618/wrong_class_with_etalon.fasta"
+        #"/mnt/beegfs/ga/bracken_ribo_count/tests/wrongly_assignedNA_0618/7_R1pren_1_240_derep.fasta"
+        #"datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
     output:
         tmp + "/testing_clustering/contigs.fasta"
     shell: "cp {input} {output}"
@@ -88,7 +91,7 @@ rule cut_first_250_4test:
     output:
         tmp + "/testing_clustering/{stem}_250.fasta"
     params:
-        add =       "  ftr=249 maxns=0 ",
+        add =       "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -173,7 +176,8 @@ rule get_R1_of_clusters:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
-       #i OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
@@ -185,6 +189,7 @@ rule get_R2_of_clusters:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
         #OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq"
