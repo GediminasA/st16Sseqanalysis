@@ -35,8 +35,19 @@ wait
 echo repairing with fastq pair 
 fastq_pair $fqi1uz $fqi2uz 
 echo Compressing outputs....
-gzip -c $fqi1uz.paired.fq > $fqo1 & 
-gzip -c $fqi2uz.paired.fq > $fqo2 &
+if [ ${fqo1:(-2)} == "gz" ]
+then 
+        gzip -c $fqi1uz.paired.fq > $fqo1 & 
+else 
+        mv  $fqi1uz.paired.fq  $fqo1 & 
+fi 
+if [ ${fqo2: -2} == "gz" ] 
+then 
+        gzip -c $fqi2uz.paired.fq > $fqo2 & 
+else 
+        mv  $fqi2uz.paired.fq  $fqo2 & 
+fi
+
 wait 
 
 #cleanup
