@@ -135,7 +135,7 @@ rule get_matchingR1centroids:
        '''
         export  JULIA_NUM_THREADS={threads}  ;  julia scripts/get_matching_R2_centroid.jl  -c {params.gjc} -o {output[0]} -i {input[1]}
         vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
-        repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
+        scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
        '''
 ## start collecting
 
@@ -222,7 +222,7 @@ rule repair_final:
     params:
         pref = "cl{id}_"
     shell:
-        "repair.sh in1={input[0]} in2={input[1]} " +
+        "scripts/repair.sh in1={input[0]} in2={input[1]} " +
         "out1={output[0]} out2={output[1]} ow=t "
 
 
@@ -314,7 +314,7 @@ rule correct_reads:
     shell:
         "spades.py  --only-error-correction  " +  "  -1  {input[0]} -2  {input[1]} " +
         "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-        " repair.sh in={params.r1cor} out={output[0]} in2={params.r2cor} out2={output[1]} "
+        " scripts/repair.sh in={params.r1cor} out={output[0]} in2={params.r2cor} out2={output[1]} "
 
 
 
@@ -419,6 +419,7 @@ rule cluster_with_swarm:
             fp="-f"
         fi
         swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
+        echo swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo "Creating file: " {params.jco}
         julia scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
@@ -792,7 +793,7 @@ rule remove_primer_sequences_from_R1_and_copy_R2_16S:
                  threads={threads} \
                 stats={output[0]} overwrite=t \
                 -Xmx{params.m}g 2> {log}
-                repair.sh in1={output[1]} in2={input[1]}  threads={threads} \
+                scripts/repair.sh in1={output[1]} in2={input[1]}  threads={threads} \
                 out1={output[2]} out2={output[3]}
                 '''
 
@@ -813,7 +814,7 @@ rule match_pairs_after_dedup:
     benchmark:
         BENCHMARKS + "/matching_after_deduplication_{stem}.log"
     shell:
-        "repair.sh in={input[0]} out={output[0]} " +
+        "scripts/repair.sh in={input[0]} out={output[0]} " +
                 " in2={input[1]} out2={output[1]}"
                 " threads={threads} " +
                 "-Xmx{params.m}g &> {log}"
@@ -849,7 +850,7 @@ rule match_pairs_after_filtering:
     benchmark:
         BENCHMARKS + "/filteringR1_{stem}.log"
     shell:
-        "repair.sh in={input[0]} out={output[0]} " +
+        "scripts/repair.sh in={input[0]} out={output[0]} " +
                 " in2={input[1]} out2={output[1]}"
                 " threads={threads} " +
                 "-Xmx{params.m}g &> {log}"
