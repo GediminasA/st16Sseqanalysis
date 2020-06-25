@@ -76,20 +76,22 @@ rule part:
 ###################USED FOR TESTING#########################################
 rule get_testing_file:
     input:
-        "tmp_zymo_0615_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        "tmp_zymo_0623_one/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        #"datasets/testingdata/0623/misclas.fasta"
+        #"tmp_zymo_0615_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
         # "/mnt/beegfs/ga/bracken_ribo_count/datasets/testingdata/0618/wrong_class_with_etalon.fasta"
         #"/mnt/beegfs/ga/bracken_ribo_count/tests/wrongly_assignedNA_0618/7_R1pren_1_240_derep.fasta"
         #"datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
     output:
-        tmp + "/testing_clustering/contigs.fasta"
+         "testing_clustering/contigs.fasta"
     shell: "cp {input} {output}"
 
 rule cut_first_250_4test:
     input:
-        tmp + "/testing_clustering/{stem}.fasta"
+        "testing_clustering/{stem}.fasta"
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
     output:
-        tmp + "/testing_clustering/{stem}_250.fasta"
+        "testing_clustering/{stem}_250.fasta"
     params:
         add =       "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
