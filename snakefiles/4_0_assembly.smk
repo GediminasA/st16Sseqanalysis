@@ -18,8 +18,8 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
+       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
     output:
