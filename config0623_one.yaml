@@ -77,12 +77,12 @@ MACHINE:
     threads_barnap: 12
     threads_cdhit: 12
     threads_nhmmer: 12
-    threads_bwa: 12
-    threads_salmon: 12
-    threads_kraken: 12
-    threads_blast: 24
+    threads_bwa: 8
+    threads_salmon: 8
+    threads_kraken: 8
+    threads_blast: 8
     threads_swarm: 6
-    threads_dada: 24
+    threads_dada: 8
 
 ##############
 # References #

@@ -18,9 +18,9 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-       # OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
-       # OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
+       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
+       #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
@@ -83,15 +83,15 @@ rule get_testing_file:
         #"/mnt/beegfs/ga/bracken_ribo_count/tests/wrongly_assignedNA_0618/7_R1pren_1_240_derep.fasta"
         #"datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
     output:
-         "testing_clustering/contigs.fasta"
+         "testing_clustering/"+config["dt"]+"/contigs.fasta"
     shell: "cp {input} {output}"
 
 rule cut_first_250_4test:
     input:
-        "testing_clustering/{stem}.fasta"
+         "testing_clustering/{stem}.fasta"
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
     output:
-        "testing_clustering/{stem}_250.fasta"
+         "testing_clustering/{stem}_250.fasta"
     params:
         add =       "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
@@ -111,34 +111,42 @@ rule test_clustering_and_assignment:
 #############################################################################
 ####deduplication based on R1:
 
+rule get_R1_fasta:
+    input:
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1.fasta",
+    shell:
+        "seqkit fq2fa -w0 {input} > {output}  "
+
 rule get_R2_fasta:
     input:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
-        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
     output:
         tmp + "/16S_amplicons/R2baseddeup/{stem}_R2.fasta",
     shell:
         "seqkit fq2fa -w0 {input} > {output}  "
-
 rule get_matchingR1centroids:
     input:
-        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD1.fasta",
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2.fasta",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_woN_clusterL98_swarmD2.fasta",
+        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woN_woident_swarmD2.fasta"
     output:
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_matching_clusteredR2.fasta",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2_wosizes.fasta",
-    params:
-        gjc = tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2.fasta.gjc",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_clrep.fastq.gz"
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
+        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2_wosizes.fasta",
+        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD1_minsize2_wosizes.fasta",
     threads: 10
     shell:
        '''
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/get_matching_R2_centroid.jl  -c {params.gjc} -o {output[0]} -i {input[1]}
-        vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
-        scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
-       '''
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[0]} -q {input[1]} -f {input[3]}
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[1]} -q {input[0]} -f {input[2]}
+        '''
+        # vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
+        # scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
 ## start collecting
 
 
