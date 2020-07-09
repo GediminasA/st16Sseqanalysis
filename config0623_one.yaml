@@ -10,7 +10,7 @@
 
 SAMPLES:  Zymo1-2X-65C_S6 #Geordi-Zymo-even-1 Geordi-Zymo-even-2 Zymo1-2X-65C_S6 #Zymo1-2X-55C_S2 Zymo1-1X-65C_S5
 INPUT-DIR: /media/root/ngs_nas3/2020_06_05_Geordi_benchmarking 
-UMI_SAMPLES:  "S3"
+UMI_SAMPLES:  "Zymo1-2X-65C_S6"
 LANE-REGEX: "L\\d\\d\\d_"
 TMP-DIR: tmp_zymo_0623_one
 OUT-DIR: out_zymo_0623_one
@@ -82,7 +82,8 @@ MACHINE:
     threads_kraken: 8
     threads_blast: 8
     threads_swarm: 6
-    threads_dada: 8
+    threads_dada: 24
+    threds_seqkit: 8
 
 ##############
 # References #
@@ -130,4 +131,4 @@ DNA_GC:
 KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
 BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
 #DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
-DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v138_train_set.fa.gz
+DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v132_train_set.fa.gz

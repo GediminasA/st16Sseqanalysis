@@ -10,6 +10,8 @@ blast_fields = "qseqid sseqid pident length mismatch gapopen qstart qend sstart 
 dada_fields = "Contig Kingdom Phylum Class Order Family Genus"
 df = CSV.read(blastfile,header = Array{String,1}(split(blast_fields)))
 df2 = CSV.read(dadatax,header = Array{String,1}(split(dada_fields)), skipto = 2)
+tt = getindex.(split.(df2.Contig," "),1)
+df2.Contig = tt 
 contig_genus_map = Dict{String,String}()
 contigs = collect(df2.Contig)
 genus = df2.Genus
@@ -22,9 +24,15 @@ read_name = fill("",size(df)[1])
 genus = fill("",size(df)[1])
 genus_species = fill("",size(df)[1])
 for i in 1:size(df)[1]
-    sizes[i] = parse(Int64,split(split(df.qseqid[i],"=")[2],";")[1]) #swarm attaches ; to the end of name
+    if occursin("=",df.qseqid[i]) && occursin(";",df.qseqid[i]) 
+        sizes[i] = parse(Int64,split(split(df.qseqid[i],"=")[2],";")[1]) #swarm attaches ; to the end of name
+    else
+        sizes[i] = 1
+    end 
     read_name[i] = split(df.qseqid[i],";")[1]
+    
     species[i] = String(split(df.sseqid[i],":")[1])
+    
     genus[i] = contig_genus_map[df.qseqid[i]]
     genus_species[i] = replace(genus[i]*"||"*species[i],"/"=>"-")
 end

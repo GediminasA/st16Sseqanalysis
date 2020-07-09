@@ -27,13 +27,15 @@ function run_clustering(seqs::Dict{String,String}, mapping::Array{Tuple{Array{St
     println(stderr,"Starting $n clustering runs...")
     centroids = Array{String,1}(undef, n)
     Threads.@threads for i in 1:n
-                r1s = mapping[i][1]
-                name = mapping[i][2]
-                if length(r1s) == 1
-                    centroids[i] = seqs[r1s[1]]
-                else
-                    centroids[i] = cluster_r2(r1s, seqs,t=3)
-                end
+                if i in keys(mapping)
+                    r1s = mapping[i][1]
+                    name = mapping[i][2]
+                    if length(r1s) == 1
+                        centroids[i] = seqs[r1s[1]]
+                    else
+                        centroids[i] = cluster_r2(r1s, seqs,t=3)
+                    end 
+                end 
                 next!(p)
     end
     return(centroids)
@@ -45,19 +47,25 @@ function cluster_r2(r1s::Array{String,1},r2_seqs::Dict{String,String};id=0.97,t=
     r_names = "$tmpdir/clustered.fasta"
     best = "$tmpdir/best.fasta"
     fo = open(f_names,"w")
+    ct = 0
     for n in r1s
-        seq = r2_seqs[n]
-        println(fo,">$n\n$seq\n")
+        ct += 1
+        if n in keys(r2_seqs)
+            seq = r2_seqs[n]
+            println(fo,">$n\n$seq\n")
+        end 
     end
     close(fo)
-    cluster = run(`vsearch --quiet --cluster_size $f_names --sizeout --threads $t --centroids $r_names --id $id`)
-    cluster = run(`vsearch --quiet --sortbysize $r_names  --output $best --topn 1`)
     out = ""
-    FastaReader(best) do fr
-        for (n, seq) in fr
-            out = String(seq)
+    if ct > 0
+        cluster = run(`vsearch --quiet --cluster_size $f_names --sizeout --threads $t --centroids $r_names --id $id`)
+        cluster = run(`vsearch --quiet --sortbysize $r_names  --output $best --topn 1`)
+        FastaReader(best) do fr
+            for (n, seq) in fr
+                out = String(seq)
+            end
         end
-    end
+    end 
     rm(tmpdir, recursive=true)
     return(out)
 end

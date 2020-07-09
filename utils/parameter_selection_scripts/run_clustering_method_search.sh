@@ -1,5 +1,5 @@
-t1=( clusterP98 clusterP99 swarmD1 swarmD2 unoiseM1 unoiseM2 unoiseM3 unoiseM4 minsize2 minsize3 minsize4  ) # 2 4 8 20  ) #minsize 
-t2=( swarmD2 swarmD1 minsize2 minsize3 minsize4 unoiseM1 unoiseM2 unoiseM3 unoiseM4 clusterP98 clusterP99 )
+t1=( minsize1 clusterP98 clusterP99 swarmD1 swarmD2 unoiseM1 unoiseM2 unoiseM3 unoiseM4 minsize2 minsize3 minsize4  ) # 2 4 8 20  ) #minsize 
+t2=( minsize1 swarmD2 swarmD1 minsize2 minsize3 minsize4 unoiseM1 unoiseM2 unoiseM3 unoiseM4 clusterP98 clusterP99 )
 cnt=0
 for v1 in ${t1[@]} ; do
 for v2 in ${t2[@]} ; do 
@@ -8,7 +8,7 @@ for v2 in ${t2[@]} ; do
     targetf=testing_clustering/r$cnt/contigs_250_"$method"_blast_summary.tsv 
     echo $targetf
 
-    snakemake --config dt=r$cnt  --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd " -j 96 --cluster-config cluster.json  --use-conda  --configfile config0623_one.yaml -j 96    $targetf & 
+    snakemake --config dt=r$cnt  --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd " -j 96 --cluster-config cluster.json  --use-conda  --configfile config0701_long_inserts.yaml  -j 96    $targetf & 
 done
 done
 wait

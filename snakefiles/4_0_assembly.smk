@@ -18,7 +18,9 @@ def choose_err_cor(wildcards):
 
 rule cut_first_250_bp:
     input:
-       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+       #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
+       tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
+       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
@@ -41,27 +43,6 @@ rule cut_first_250_bp:
                 "-Xmx{params.m}g " +
                 " ; seqkit fq2fa {output[1]} > {output[0]} "
 
-rule cut_first_250_bpdev:
-    input:
-        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz"
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev.fastq.gz",
-    params:
-        add =       "      minlen=260 ",
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/trimming_{stem}.log"
-    shell:
-        "bbduk.sh in={input[0]} out={output[1]} " +
-                " threads={threads} " +
-                " {params.add} " +
-                " overwrite=t " +
-                "-Xmx{params.m}g " +
-                " ; seqkit fq2fa {output[1]} > {output[0]} "
 rule part:
         input:
             "{stem}.fasta"
@@ -76,7 +57,9 @@ rule part:
 ###################USED FOR TESTING#########################################
 rule get_testing_file:
     input:
-        "tmp_zymo_0623_one/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        "tmp_zymo_0701_longins/16S_amplicons/R1clustering/Geordi-Zymo-even-2_R1_250bp.fasta",
+        #"tmp_zymo_0701_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        #"tmp_zymo_even0331_zymo_one/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
         #"datasets/testingdata/0623/misclas.fasta"
         #"tmp_zymo_0615_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
         # "/mnt/beegfs/ga/bracken_ribo_count/datasets/testingdata/0618/wrong_class_with_etalon.fasta"
@@ -111,23 +94,126 @@ rule test_clustering_and_assignment:
 #############################################################################
 ####deduplication based on R1:
 
-rule get_R1_fasta:
+rule get_R12_q_ini:
     input:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-    output:
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1.fasta",
-    shell:
-        "seqkit fq2fa -w0 {input} > {output}  "
-
-rule get_R2_fasta:
-    input:
-        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
         OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
     output:
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2.fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_pre.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_pre.fastq.gz",
+    threads: 2
     shell:
-        "seqkit fq2fa -w0 {input} > {output}  "
+        '''
+        seqkit seq -m 240 -i  {input[0]} -o  {output[0]} &
+        seqkit seq -m 32 -i  {input[1]} -o  {output[1]} &
+        wait
+        '''
+rule match_pairs_ded:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_pre.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_pre.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+    shell:
+        " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
+
+
+
+rule fqgz_to_fasta:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fasta",
+    shell:
+        "seqkit fq2fa -w0 {input} -o {output} "
+
+rule get_names:
+    input:
+        "{stem}.fasta"
+    output:
+        "{stem}.fasta.names"
+    shell:
+        "seqkit seq -n {input} > {output}"
+
+rule remove_vsearch_sizes:
+    input:
+        "{stem}.fasta"
+    output:
+        "{stem}_wosizes.fasta"
+    shell:
+        "vsearch --fastx_filter  {input[0]} --minsize 1 --xsize  --fastaout {output[0]}"
+
+rule dedup_R2:
+    input:
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_woN_woident_clusterP99_wosizes.fasta.names",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz",
+    log:
+        LOGS + "/cl_based_dedup_{stem}.log"
+    threads:
+        CONFIG["MACHINE"]["threads_spades"]
+    shell:
+        "seqkit grep -j {threads} -n  -f {input[1]} {input[0]} -o {output} "
+
+rule repair_cl_dedup:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup_matched.fastq.gz",
+    shell:
+        "scripts/repair.sh in1={input[0]} in2={input[1]} " +
+        "out1={output[0]} out2={output[1]} ow=t "
+
+rule get_matchingR1centroidsV2:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_woN_clusterP99.fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_R1_matching_clusteredR2.fasta",
+    threads: 10
+    shell:
+       '''
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/get_matching_R2_centroid.jl  -c {input[0]}.jc  -o {output[0]} -i {input[1]}
+       '''
+
+rule get_deduplicated:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_woN_clusterP99_wosizes.fasta.names",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_R1_matching_clusteredR2.fasta.names",
+    threads: 10
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full.fastq.gz",
+    shell:
+        " seqkit grep -n -f {input[1]} {input[0]}  -o {output[0]} "
+
+rule cut_dedupR1:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full_240bp.fastq.gz",
+    shell:
+        "seqkit subseq -r 1:240 {input} -o {output}"
+
+rule getR2_revc:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full_240bp.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full_240bp_revc.fastq.gz",
+
+    shell:
+        "seqkit seq --reverse --complement {input} -o {output} "
+
+        #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        #vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
+        #repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
+
 rule get_matchingR1centroids:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
@@ -388,7 +474,7 @@ rule rmidenti:
     shell:
         '''
         set +e
-        vsearch    --derep_fulllength   {input} --sizein   --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
+        vsearch    --derep_fulllength   {input}    --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
         julia scripts/uc2jc.jl {params.uc} > {output[1]}
         cp {output[1]}  {output[2]}
         exitcode=$?
