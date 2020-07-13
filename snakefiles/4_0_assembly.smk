@@ -19,7 +19,8 @@ def choose_err_cor(wildcards):
 rule cut_first_250_bp:
     input:
        #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
-       tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
+       #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
@@ -100,22 +101,48 @@ rule get_R12_q_ini:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_pre.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_pre.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
     threads: 2
     shell:
         '''
-        seqkit seq -m 240 -i  {input[0]} -o  {output[0]} &
-        seqkit seq -m 32 -i  {input[1]} -o  {output[1]} &
+        seqkit seq  -i  {input[0]} -o  {output[0]} &
+        seqkit seq -i  {input[1]} -o  {output[1]} &
         wait
         '''
-rule match_pairs_ded:
+rule merge_4dedup:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_pre.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_pre.fastq.gz",
-    output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+
+    log:
+        LOGS + "/merging_16Shaving_pairs_{stem}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/filteringR1_{stem}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " outu1={output[1]} " +
+                " outu2={output[2]} " +
+                "-Xmx{params.m}g &> {log}"
+
+
+rule match_pairs_ded:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_matched.fastq.gz",
     shell:
         " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
 
@@ -145,13 +172,26 @@ rule remove_vsearch_sizes:
     shell:
         "vsearch --fastx_filter  {input[0]} --minsize 1 --xsize  --fastaout {output[0]}"
 
+rule deupumi:
+    input:
+        "{stem}.fastq.gz"
+    output:
+        "{stem}_dedupumi.fastq.gz"
+    conda:
+        "../envs/umi.yaml"
+    shell:
+        "  java -server -Xms8G -Xmx8G -Xss20M -jar dependencies/UMICollapse_fastq/test.jar fastq -i {input} -o {output} "
+
+
+
+
 rule dedup_R2:
     input:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_woN_woident_clusterP99_wosizes.fasta.names",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_woident_wosizes.fasta.names",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_test.fastq.gz",
     log:
         LOGS + "/cl_based_dedup_{stem}.log"
     threads:

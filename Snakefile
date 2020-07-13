@@ -39,7 +39,7 @@ localrules: filterout_r1primer_sequence_having_reads_on16S
 rule all:
     input:
         #OUT + "/INSERT_SIZE/all.csv",
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_centroids_full_240bp_blast_summary_genus.tsv", stem=STEMS),
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
 
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
