@@ -136,16 +136,66 @@ rule merge_4dedup:
                 "-Xmx{params.m}g &> {log}"
 
 
+rule cut_trim_R2_unmerged:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut.fastq.gz",
+    params:
+        add  =  " minlength=220 ftr=219 maxns=0" ,
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+        " threads={threads} " +
+        " {params.add} threads={threads} " +
+        " overwrite=t "
+
+rule cut_trim_R1_unmerged:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_filteredAndCut.fastq.gz",
+    params:
+        add  =  " minlength=240 ftr=239 maxns=0 " ,
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+        " threads={threads} " +
+        " {params.add} threads={threads} " +
+        " overwrite=t "
+
 rule match_pairs_ded:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_filteredAndCut.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_matched.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
     shell:
         " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
+rule join_clustering:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined.fastq.gz",
+    params:
+        add  =  " fusepairs=t pad=1 " ,
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell: '''
+    fuse.sh threads={threads} in={input[0]} in2={input[1]} out={output} {params.add}
+    '''
 
+rule replaceNs:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined_NtoA.fastq.gz",
+    shell:
+        " seqkit replace -p 'N' -r 'A'  {input} -o {output} "
 
 
 rule fqgz_to_fasta:
