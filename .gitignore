@@ -2,6 +2,7 @@
 .snakemake/**
 *.swp
 *.swo
+*.swn
 out_*
 output_*
 tmp_*

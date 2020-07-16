@@ -120,13 +120,13 @@ rule merge_4dedup:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
 
     log:
-        LOGS + "/merging_16Shaving_pairs_{stem}.log"
+        LOGS + "/merge_4dedup_{stem}.log"
     params:
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
+        BENCHMARKS + "/merge_4dedup_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
         "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
                 " in2={input[1]} " +
