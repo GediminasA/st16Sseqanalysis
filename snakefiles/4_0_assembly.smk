@@ -55,10 +55,17 @@ rule part:
             "seqkit sample -w 0 -n {params.nmb} {input} > {output}  "
 
 
-###################USED FOR TESTING#########################################
+###################USED FOR developmental  TESTING#########################################
+
+rule prepare4test:
+    input:
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined_NtoA.fastq.gz",stem=STEMS)
+
 rule get_testing_file:
     input:
-        "tmp_zymo_0701_longins/16S_amplicons/R1clustering/Geordi-Zymo-even-2_R1_250bp.fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined_NtoA.fasta",
+
+        #"tmp_zymo_0701_longins/16S_amplicons/R1clustering/Geordi-Zymo-even-2_R1_250bp.fasta",
         #"tmp_zymo_0701_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta",
         #"tmp_zymo_even0331_zymo_one/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
         #"datasets/testingdata/0623/misclas.fasta"
@@ -67,7 +74,7 @@ rule get_testing_file:
         #"/mnt/beegfs/ga/bracken_ribo_count/tests/wrongly_assignedNA_0618/7_R1pren_1_240_derep.fasta"
         #"datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
     output:
-         "testing_clustering/"+config["dt"]+"/contigs.fasta"
+         "testing_clustering/"+config["dt"]+"/contigs_{stem}prep.fasta"
     shell: "cp {input} {output}"
 
 rule cut_first_250_4test:
@@ -175,6 +182,7 @@ rule match_pairs_ded:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
     shell:
         " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
+
 rule join_clustering:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_filteredAndCut_matched.fastq.gz",
@@ -191,12 +199,64 @@ rule join_clustering:
 
 rule replaceNs:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined.fastq.gz",
+        "{stem}.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_joined_NtoA.fastq.gz",
+        "{stem}_NtoA.fastq.gz",
     shell:
-        " seqkit replace -p 'N' -r 'A'  {input} -o {output} "
+        " seqkit replace -p '[N]' -r 'A' -s  {input} -o {output} "
 
+#these rules for pairwise clusterig testing
+
+rule cp4test:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc.fastq.gz",
+    shell:
+        " cp  {input[0]} {output[0]} ; cp  {input[1]} {output[1]}    "
+rule repair_pairs:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_woN_woident_swarmD1.fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_woN_woident_swarmD1.fasta",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_cls.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_cls.fastq.gz",
+    threads: 2
+    shell:
+       '''
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[0]} -q {input[1]} -f {input[3]}
+        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[1]} -q {input[0]} -f {input[2]}
+        '''
+        # vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
+        # scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
+## start collecting
+rule match_pairs_after_repair:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls_matched.fastq.gz",
+    shell:
+        " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
+
+rule join_clustering2:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls_matched.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_001_ini_notmerged_joined2.fastq.gz",
+    params:
+        add  =  " fusepairs=t pad=1 " ,
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell: '''
+    fuse.sh threads={threads} in={input[0]} in2={input[1]} out={output} {params.add}
+    '''
 
 rule fqgz_to_fasta:
     input:
@@ -304,26 +364,6 @@ rule getR2_revc:
         #vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
         #repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
 
-rule get_matchingR1centroids:
-    input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R1_woN_clusterL98_swarmD2.fasta",
-        tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woN_woident_swarmD2.fasta"
-    output:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_clrep.fastq.gz"
-        #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
-        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD2_wosizes.fasta",
-        #tmp + "/16S_amplicons/R2baseddeup/{stem}_R2_woident_swarmD1_minsize2_wosizes.fasta",
-    threads: 10
-    shell:
-       '''
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[0]} -q {input[1]} -f {input[3]}
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[1]} -q {input[0]} -f {input[2]}
-        '''
-        # vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
-        # scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
-## start collecting
 
 
 

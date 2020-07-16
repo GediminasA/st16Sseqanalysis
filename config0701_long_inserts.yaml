@@ -8,7 +8,7 @@
 # Should be .fq.gz or .fastq.gz files. #
 ########################################
 
-SAMPLES:  Geordi-Zymo-even-1 Geordi-Zymo-even-2 # Zymo1-2X-65C_S6 #Zymo1-2X-55C_S2 Zymo1-1X-65C_S5
+SAMPLES:  Geordi-Zymo-even-1 Geordi-Zymo-even-2 Zymo1-2X-65C_S6 #Zymo1-2X-55C_S2 Zymo1-1X-65C_S5
 INPUT-DIR: /media/root/ngs_nas3/2020_06_29_Geordi_standartai 
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
