@@ -12,7 +12,7 @@ counter = 0
 for (s in seqs)
 {
   #limit = 250
-  limit = 250
+  limit = 240
   l <- nchar(s)
   if ( l < limit ) {
   limit = l

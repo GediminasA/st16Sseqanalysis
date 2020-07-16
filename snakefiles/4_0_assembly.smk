@@ -29,7 +29,7 @@ rule cut_first_250_bp:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
     params:
-        add =       "  ftr=239 maxns=0 ",
+        add =      " ", # "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -59,7 +59,7 @@ rule part:
 rule get_testing_file:
     input:
         "tmp_zymo_0701_longins/16S_amplicons/R1clustering/Geordi-Zymo-even-2_R1_250bp.fasta",
-        #"tmp_zymo_0701_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
+        #"tmp_zymo_0701_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta",
         #"tmp_zymo_even0331_zymo_one/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
         #"datasets/testingdata/0623/misclas.fasta"
         #"tmp_zymo_0615_longins/16S_amplicons/R1clustering/Zymo1-2X-65C_S6_R1_250bp.fasta"
@@ -77,7 +77,7 @@ rule cut_first_250_4test:
     output:
          "testing_clustering/{stem}_250.fasta"
     params:
-        add =       "  ftr=239 maxns=0 ",
+        add =       " ", #"  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
