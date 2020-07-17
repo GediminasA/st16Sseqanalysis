@@ -220,8 +220,8 @@ rule repair_pairs:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_woN_woident_swarmD1.fasta",
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_woN_woident_swarmD1.fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_woN_woident_"+config["r1c"]+".fasta",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_woN_woident_"+config["r2c"]+".fasta",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_cls.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_cls.fastq.gz",
@@ -236,20 +236,20 @@ rule repair_pairs:
 ## start collecting
 rule match_pairs_after_repair:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_cls.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_cls.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls_matched.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_cls_matched.fastq.gz",
     shell:
         " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
 
 rule join_clustering2:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmerged_cls_matched.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmerged_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R1_001_ini_notmergedc_cls_matched.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_R2_001_ini_notmergedc_cls_matched.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_001_ini_notmerged_joined2.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/"+config["dt"]+"/{stem}_L001_001_ini_notmergedc_joined2.fastq.gz",
     params:
         add  =  " fusepairs=t pad=1 " ,
     threads:
