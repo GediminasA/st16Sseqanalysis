@@ -14,8 +14,8 @@ for f in ${finalm[@]} ; do
     #echo $targetf
     snakemake --config dt=r$cnt r1c=$r1c r2c=$r2c  --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd " -j 96 --cluster-config cluster.json  --use-conda  --configfile config0701_long_inserts.yaml  -j 96    $targetf & 
 done
-done
 wait
+done
 done
 
 #nice -n 19 snakemake --use-conda -j 12 --configfile config0615_long_inserts.yaml   -f tmp_zymo_0615_longins/testing_clustering/contigs_250_woident_swarmD2_unoiseM1_blast_summary.tsv
