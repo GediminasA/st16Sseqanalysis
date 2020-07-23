@@ -12,7 +12,7 @@ for f in ${finalm[@]} ; do
         targetf=$targetf" "tmp_zymo_0701_longins/16S_amplicons/ClusterBasedDedup/r"$cnt"/"$s"_L001_001_ini_notmergedc_joined2_NtoA_"$f"_blast_summary_genus.tsv
     done 
     #echo $targetf
-    snakemake --config dt=r$cnt r1c=$r1c r2c=$r2c  --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd " -j 96 --cluster-config cluster.json  --use-conda  --configfile config0701_long_inserts.yaml  -j 96    $targetf & 
+    echo snakemake --config dt=r$cnt r1c=$r1c r2c=$r2c  --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd " -j 96 --cluster-config cluster.json  --use-conda  --configfile config0701_long_inserts.yaml  -j 96    $targetf & 
 done
 done
 wait
