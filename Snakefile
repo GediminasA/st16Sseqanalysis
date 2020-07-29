@@ -1,5 +1,4 @@
 #!python
-
 import fnmatch
 import logging
 import logging.config
@@ -9,7 +8,8 @@ import sys
 import yaml
 from shutil import copyfile
 
-
+# use julia with all required and precombiled libraries  and mamba from container
+container: "docker://galzbutas/julia4bioinformatics"
 # ------------------------------ Include Snakefiles ------------------------- #
 include: "./snakefiles/0_0_utilities.smk"
 include: "./snakefiles/0_1_configuration.smk"
@@ -35,13 +35,11 @@ wlogger.info(f'Output direcoty: [{CONFIG["OUT-DIR"]}]')
 
 localrules: filterout_r1primer_sequence_having_reads_on16S
 
-
 rule all:
     input:
         #OUT + "/INSERT_SIZE/all.csv",
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
-
-        #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon2.csv",stem=STEMS),
@@ -52,7 +50,6 @@ rule all:
         #OUT + "/picard_all_report.html",
         #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
-
         #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids.fasta", stem=STEMS),
         #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary_genus.tsv", stem=STEMS),
         #expand(tmp + "/{stem}_pairedreads_bracken_raport.txt", stem=STEMS),

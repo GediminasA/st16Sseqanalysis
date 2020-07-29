@@ -20,8 +20,8 @@ rule cut_first_250_bp:
     input:
        #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
        #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
-       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
+       #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
+       OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
@@ -29,12 +29,14 @@ rule cut_first_250_bp:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
     params:
-        add =      " ", # "  ftr=239 maxns=0 ",
+        add =    "  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/trimming_{stem}.log"
+    conda:
+        "../envs/main.yaml"
     shell:
         "bbduk.sh in={input[0]} out={output[1]} " +
                 " threads={threads} " +
@@ -371,9 +373,9 @@ rule getR2_revc:
 
 checkpoint group_reads_by_first250bp:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoiseM1_swarmD1.fasta",
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_swarmD2_clusterP99_dada2classify.csv",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoiseM1_swarmD1_dada2classify.csv",
     output:
         directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
@@ -601,6 +603,8 @@ rule rmidenti:
         "{stem}_woident.fasta.gjc", #gloval clustering
     params:
         uc = "{stem}_woident.fasta.uc", #gloval clustering
+    conda:
+        "../envs/main.yaml"
     shell:
         '''
         set +e
