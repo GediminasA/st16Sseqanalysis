@@ -4,7 +4,7 @@ using DataFrames
 using DataStructures
 using BioSequences
 using CodecZlib
-
+using FASTX 
 
 function parse_commandline()
     s = ArgParseSettings()

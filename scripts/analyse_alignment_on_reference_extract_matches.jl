@@ -1,12 +1,16 @@
-using ArgParse2
 using CSV
 using DataFrames
-using DataStructures
-using BioSequences
-using CodecZlib
-using BioAlignments
 using DataFramesMeta
+using DataStructures
+using CodecZlib
+using XAM
+using FASTX
+using BioSequences
+using BioAlignments
 
+push!(LOAD_PATH, "/mnt/beegfs/ga/rnd-it-molbio-16S-geordi/scripts/julia_modules/ArgParse2.jl/src")
+println()
+using ArgParse2
 
 "Parse genus asignment"
 function parse_genus_info(inf::String)
@@ -22,10 +26,10 @@ end
 function parse_fasta(f::String)::Dict{String,String}
     out = Dict{String,String}()
     ct = 0
-    for record in FASTA.Reader(open(f))
+    for record in FASTX.FASTA.Reader(open(f))
         ct +=1
-        id = BioSequences.FASTA.identifier(record)
-        seq = BioSequences.FASTA.sequence(record)
+        id = FASTX.FASTA.identifier(record)
+        seq = FASTX.FASTA.sequence(record)
         out[id]=String(seq)
         if mod(ct,10) == 0
             println(stderr,"Parsed $ct sequences\r")
@@ -165,19 +169,22 @@ function main()
     costmodel = BioAlignments.CostModel(match=0, mismatch=1, insertion=1, deletion=1);
     testseqs =  parse_fasta(args.contig)
     ref =  parse_fasta(args.ref)
-    reader = open(BAM.Reader,args.inbam,index = args.inbam*".bai")
+    print(args.inbam)	
+    reader = open(BAM.Reader,args.inbam)
+    ct = 0 
     
     for record in reader
         if BAM.ismapped(record) #&& SAM.isprimary(record)
-            pos = BAM.position(record)
+            ct += 1
+	    pos = BAM.position(record)
             seq = BAM.sequence(record)
             rpos = BAM.rightposition(record)
-            aln = BioAlignments.BAM.alignment(record)
+            aln = XAM.BAM.alignment(record)
             s = first(aln.anchors).refpos
             e = last(aln.anchors).refpos
             l = abs(s-e)
             rn = BAM.refname(record)
-	    qual = BioAlignments.BAM.mappingquality(record)
+	    qual = XAM.BAM.mappingquality(record)
 	    tempname = BAM.tempname(record)
 	    genus = genus_assigns[split(tempname,"_")[1]]
 	    real_length = length(testseqs[BAM.tempname(record)])
@@ -210,7 +217,7 @@ function main()
     end
     close(reader)
     matches_expected = @where(matches, :Expected_genus .== 1)
-    CSV.write(args.output*".info.csv", matches_expected,delim='\t')
+    CSV.write(args.output*".info.csv", matches,delim='\t')
     ref_c_ds = groupby(matches_expected,:Ref_ID)
     lens =Array{Int64,1}()
     for ref_c_d in ref_c_ds
