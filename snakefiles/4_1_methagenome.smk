@@ -91,4 +91,4 @@ rule extract_species:
     params:
         s = "{stem}"
     shell:
-        "julia scripts/parse_balst_on_zymostd.jl {input[0]} {input[1]}  {params.s}"
+        "singularity/julia.sif scripts/parse_balst_on_zymostd.jl {input[0]} {input[1]}  {params.s}"

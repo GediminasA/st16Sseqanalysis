@@ -35,8 +35,6 @@ rule cut_first_250_bp:
         CONFIG["BBDUK"]["threads"]
     benchmark:
         BENCHMARKS + "/trimming_{stem}.log"
-    conda:
-        "../envs/main.yaml"
     shell:
         "bbduk.sh in={input[0]} out={output[1]} " +
                 " threads={threads} " +
@@ -230,8 +228,8 @@ rule repair_pairs:
     threads: 2
     shell:
        '''
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[0]} -q {input[1]} -f {input[3]}
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/rereplicate.jl  -o {output[1]} -q {input[0]} -f {input[2]}
+        export  JULIA_NUM_THREADS={threads}  ;  singularity/julia.sif scripts/rereplicate.jl  -o {output[0]} -q {input[1]} -f {input[3]}
+        export  JULIA_NUM_THREADS={threads}  ;  singularity/julia.sif scripts/rereplicate.jl  -o {output[1]} -q {input[0]} -f {input[2]}
         '''
         # vsearch --fastx_filter {input[0]} --fastaout {output[3]} --xsize  --minsize 1
         # scripts/repair.sh ow=t  in1={output[0]} in2={output[3]} out1={output[1]} out2={output[2]}
@@ -331,7 +329,7 @@ rule get_matchingR1centroidsV2:
     threads: 10
     shell:
        '''
-        export  JULIA_NUM_THREADS={threads}  ;  julia scripts/get_matching_R2_centroid.jl  -c {input[0]}.jc  -o {output[0]} -i {input[1]}
+        export  JULIA_NUM_THREADS={threads}  ;  singularity/julia.sif scripts/get_matching_R2_centroid.jl  -c {input[0]}.jc  -o {output[0]} -i {input[1]}
        '''
 
 rule get_deduplicated:
@@ -388,7 +386,7 @@ checkpoint group_reads_by_first250bp:
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
         vsearch    --sortbysize {input[0]}   --minsize 1   --sizein   --sizeout     --fasta_width 0  --output {output[1]}
         seqkit seq -n {output[1]} | cut -d';' -f1 > {output[1]}.names
-        julia scripts/filter_and_extractnames_withgenus.jl {output[1]}.names {input[0]}.gjc.sorted {input[2]} {output[0]} {params.minsizefrac}
+        singularity/julia.sif scripts/filter_and_extractnames_withgenus.jl {output[1]}.names {input[0]}.gjc.sorted {input[2]} {output[0]} {params.minsizefrac}
          '''
 
 checkpoint group_reads_by_first250bpdev:
@@ -603,13 +601,11 @@ rule rmidenti:
         "{stem}_woident.fasta.gjc", #gloval clustering
     params:
         uc = "{stem}_woident.fasta.uc", #gloval clustering
-    conda:
-        "../envs/main.yaml"
     shell:
         '''
         set +e
         vsearch    --derep_fulllength   {input}    --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
-        julia scripts/uc2jc.jl {params.uc} > {output[1]}
+        singularity/julia.sif scripts/uc2jc.jl {params.uc} > {output[1]}
         cp {output[1]}  {output[2]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -651,11 +647,11 @@ rule cluster_with_swarm:
         swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo "Creating file: " {params.jco}
-        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        singularity/julia.sif scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            singularity/julia.sif scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -686,11 +682,11 @@ rule cluster_with_vsize:
         set +e
         vsearch     --cluster_size   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        singularity/julia.sif scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            singularity/julia.sif scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -722,11 +718,11 @@ rule cluster_with_vlength:
         set +e
         vsearch     --cluster_fast   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        singularity/julia.sif scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            singularity/julia.sif scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -770,8 +766,8 @@ rule remove_small_clusters:
         seqkit seq -n {output} | cut -d';' -f1 > {params.no}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
-            julia scripts/subsetjc.jl {params.no} {params.gjci}  > {params.gjco}
-            julia scripts/subsetjc.jl {params.no} {params.jci}  > {params.jco}
+            singularity/julia.sif scripts/subsetjc.jl {params.no} {params.gjci}  > {params.gjco}
+            singularity/julia.sif scripts/subsetjc.jl {params.no} {params.jci}  > {params.jco}
         else
             echo "Previous clusterings' jc was not  found going without it...."
         fi
@@ -795,11 +791,11 @@ rule cluster_with_unoise:
     shell:'''
         vsearch     --cluster_unoise   {input}  --minsize  {params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        julia scripts/uc2jc.jl {params.uco} > {params.jco}
+        singularity/julia.sif scripts/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            julia scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            singularity/julia.sif scripts/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -1144,7 +1140,7 @@ rule filterout_r2primer_repaired_sequence_not_corossing16S:
     benchmark:
         BENCHMARKS + "/filteringR2_16S_{stem}.log"
     shell:
-        "seqkit grep -v  -f <(julia scripts/extract_not_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  "
+        "seqkit grep -v  -f <(singularity/julia.sif scripts/extract_not_matching_rRNA_names.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} )  {input[0]} | gzip -9  > {output[0]}  "
 
 
 
@@ -1173,7 +1169,7 @@ rule filterout_r1primer_sequence_having_reads_on16S:
     benchmark:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
-        "julia scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
+        "singularity/julia.sif scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
 
 
 
@@ -1469,7 +1465,7 @@ rule filter_long_matches:
     output:
         "{stem}_filtlen.bam"
     shell:
-        "julia scripts/filter_bam_by_tlen.jl  -i {input} -o {output} -l 350; samtools index {output} "
+        "singularity/julia.sif scripts/filter_bam_by_tlen.jl  -i {input} -o {output} -l 350; samtools index {output} "
 
 rule quantify_contigs_on_reference:
     input:
@@ -1521,7 +1517,7 @@ rule analyse_insert_size:
     params:
         stem = "{stem}"
     shell:
-        "julia scripts/analyse_bam_coverage.jl -i {input} -o {output[0]} -s {params.stem} > {output[1]}"
+        "singularity/julia.sif scripts/analyse_bam_coverage.jl -i {input} -o {output[0]} -s {params.stem} > {output[1]}"
 
 rule merge_insert_sizes:
     input:
@@ -1544,7 +1540,7 @@ rule summarise_insert_sizes:
         OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
         OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
     shell:
-        "julia scripts/pivot_bam_coverage_data.jl -i {input} -o {params.name} "
+        "singularity/julia.sif scripts/pivot_bam_coverage_data.jl -i {input} -o {params.name} "
 
 
 
@@ -1564,7 +1560,7 @@ rule filter_rRNA_contigs:
         "{stem}_16s.fasta",
         "{stem}_16s_motifs.fasta"
     shell:
-        "julia scripts/extract_properly_matching_rRNA_names_contigs.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -f  {input[0]} -o {output[0]} -g {output[1]}  "
+        "singularity/julia.sif scripts/extract_properly_matching_rRNA_names_contigs.jl -i {input[1]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length} -f  {input[0]} -o {output[0]} -g {output[1]}  "
 
 rule quantify_contigs:
     input:
@@ -1717,7 +1713,7 @@ rule exctract_abundant_readswoprimers:
         tmp + "/Genus_analysis_readswoprimers_filtered_fractions.csv",
         tmp + "/Genus_analysis_readswoprimers_additional_info.csv"
     shell:
-        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
+        "singularity/julia.sif scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 rule exctract_abundant_contigs:
     input:
@@ -1729,7 +1725,7 @@ rule exctract_abundant_contigs:
         tmp + "/Genus_analysis_finalcontigs_filtered_fractions.csv",
         tmp + "/Genus_analysis_finalcontigs_additional_info.csv"
     shell:
-        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
+        "singularity/julia.sif scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 
 rule exctract_abundant_R1:
@@ -1742,7 +1738,7 @@ rule exctract_abundant_R1:
         tmp + "/Genus_analysis_R1_filtered_fractions.csv",
         tmp + "/Genus_analysis_R1_additional_info.csv"
     shell:
-        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
+        "singularity/julia.sif scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 rule exctract_abundant_merged_reads:
     input:
@@ -1754,7 +1750,7 @@ rule exctract_abundant_merged_reads:
         tmp + "/Genus_analysis_mergedreads_filtered_fractions.csv",
         tmp + "/Genus_analysis_mergedreads_additional_info.csv"
     shell:
-        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
+        "singularity/julia.sif scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 
 rule exctract_abundant_pairedreads:
@@ -1767,7 +1763,7 @@ rule exctract_abundant_pairedreads:
         tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         tmp + "/Genus_analysis_pairedreads_additional_info.csv"
     shell:
-        "julia scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
+        "singularity/julia.sif scripts/metagenome_analysis.jl -o {params.out_stem} -r {input.raports} -c {params.cut_off_analysis}"
 
 
 
