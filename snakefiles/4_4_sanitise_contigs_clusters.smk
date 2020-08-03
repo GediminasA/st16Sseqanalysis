@@ -51,7 +51,7 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
     shell:
         '''
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
-        julia scripts/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
+        singularity/julia.sif scripts/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
         seqkit grep -r -f {params.names} {input[1]} > {output[0]}
 
         '''
@@ -76,13 +76,12 @@ rule analyse_centroids_on_reference:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.names"
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv",
     params:
         ref = CONFIG["ref"],
         genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cluster_genus_size.csv"
     shell:'''
-        julia scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[1]}
-        seqkit grep -r -f  {output[1]} {input[1]} > {output[0]}
+        singularity/julia.sif scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
         '''
 
 

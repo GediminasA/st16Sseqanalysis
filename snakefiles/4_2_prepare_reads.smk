@@ -104,7 +104,7 @@ rule get_repaired:
     threads:
         CONFIG["BBDUK"]["threads"]
     shell:
-        "repair.sh in1={input[0]} in2={input[1]} " +
+        "scripts/repair.sh in1={input[0]} in2={input[1]} " +
         "out1={output[0]} out2={output[1]} ow=t "
 
 

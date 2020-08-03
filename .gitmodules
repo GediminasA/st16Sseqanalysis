@@ -1,0 +1,3 @@
+[submodule "scripts/julia_modules/ArgParse2.jl"]
+	path = scripts/julia_modules/ArgParse2.jl
+	url = https://juliapackages.com/p/argparse2

@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - mamba=0.4.3 
+  - singularity=3.6.1
+  - pip:
+    - git+https://github.com/GediminasA/snakemake.git 

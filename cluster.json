@@ -2,16 +2,16 @@
     "__default__" :
     {
         "name"      : "{rule}",
-        "error"     : "logs/cluster/{rule}.err",
-        "output"    : "logs/cluster/{rule}.out",
+        "error"     : "logs/cluster_{rule}.err",
+        "output"    : "logs/cluster_{rule}.out",
         "priority"  : "0"
     },
 
     "sortbyname:" :
     {
         "name"      : "{rule}",
-        "error"     : "logs/cluster/{rule}.err",
-        "output"    : "logs/cluster/{rule}.out",
+        "error"     : "logs/cluster_{rule}.err",
+        "output"    : "logs/cluster_{rule}.out",
         "priority"  : "-1000"
     }
 }

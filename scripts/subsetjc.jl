@@ -8,7 +8,6 @@ for l in readlines(f2)
     map_new[split(parts[1],";")[1]]=split(parts[2],";")[1]
 
 end
-println("Readed in nea mapping")
 ct = 0
 for l in readlines(f1)
     ct +=1

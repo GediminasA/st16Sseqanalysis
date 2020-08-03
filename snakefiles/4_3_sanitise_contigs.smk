@@ -106,7 +106,7 @@ rule add_pseudo_salmon_based_counts_chim:
     output:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_subs4chimera_samon_sizes.fasta",
     shell:
-        " julia scripts/add_salmon_sizes.jl -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
+        " singularity/julia.sif scripts/add_salmon_sizes.jl -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
 
 
 rule add_pseudo_salmon_based_counts:
@@ -117,7 +117,7 @@ rule add_pseudo_salmon_based_counts:
     output:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_salmon_sizes.fasta",
     shell:
-        " julia scripts/add_salmon_sizes.jl -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
+        " singularity/julia.sif scripts/add_salmon_sizes.jl -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
 
 rule remove_chimeras_subseq:
     input:
@@ -251,7 +251,7 @@ rule get_salmon_index4contigs:
     input:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta",
     output:
-        directory(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_salon_idx"),
+        directory(tmp + "/16S_amplicons/contigs_quantification/{stem}_cluster_salon_idx"),
     threads: CONFIG["MACHINE"]["threads_salmon"]
     shell:
         "salmon index -p {threads} --transcripts {input} --index  {output}"
@@ -290,11 +290,11 @@ rule deuplicte:
 
 rule process_bam:
     input:
-        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.bam",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_sortbyname.bam",
     output:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_proc.bam",
     shell:
-        " samtools view   -b   {input} > {output} ; samtools index {output} "
+        " samtools view   -b   {input} > {output} "
 
 
 
@@ -314,7 +314,7 @@ rule quantify_contigs_final:
 
 rule quantify_contigs_rankings_final2:
     input:
-        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_salon_idx",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_cluster_salon_idx",
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
     output:
@@ -342,7 +342,7 @@ rule analyse_contigs_on_reference:
         stem = tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_statistics",
         ref = CONFIG["ref"]
     shell:
-        "julia scripts/analyse_alignment_on_reference.jl -r {params.ref} -i {input} -o {params.stem} -l "
+        "singularity/julia.sif scripts/analyse_alignment_on_reference.jl -r {params.ref} -i {input} -o {params.stem} -l "
 
 
 
@@ -398,7 +398,7 @@ rule get_pseudo_gtf:
     output:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.gtf",
     shell:
-        "julia scripts/get_gtf_from_fa.jl -i {input} -o  {output} "
+        "singularity/julia.sif scripts/get_gtf_from_fa.jl -i {input} -o  {output} "
 
 rule quantify_contigs_rankings_final5:
     input:

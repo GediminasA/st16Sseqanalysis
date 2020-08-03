@@ -1,12 +1,16 @@
-using ArgParse2
 using CSV
 using DataFrames
-using DataStructures
-using BioSequences
-using CodecZlib
-using BioAlignments
 using DataFramesMeta
+using DataStructures
+using CodecZlib
+using XAM
+using FASTX
+using BioSequences
+using BioAlignments
 
+push!(LOAD_PATH, "/mnt/beegfs/ga/rnd-it-molbio-16S-geordi/scripts/julia_modules/ArgParse2.jl/src")
+println()
+using ArgParse2
 
 "Parse genus asignment"
 function parse_genus_info(inf::String)
@@ -22,10 +26,10 @@ end
 function parse_fasta(f::String)::Dict{String,String}
     out = Dict{String,String}()
     ct = 0
-    for record in FASTA.Reader(open(f))
+    for record in FASTX.FASTA.Reader(open(f))
         ct +=1
-        id = BioSequences.FASTA.identifier(record)
-        seq = BioSequences.FASTA.sequence(record)
+        id = FASTX.FASTA.identifier(record)
+        seq = FASTX.FASTA.sequence(record)
         out[id]=String(seq)
         if mod(ct,10) == 0
             println(stderr,"Parsed $ct sequences\r")
@@ -115,6 +119,22 @@ function determine_detectable_number(dfs::DataFrame,seqs::Dict{String,String})
 	return(length(unique(values(cls))))
 end
 
+"Write to fasta from dictionary"
+function fasta_from_dict(out_f::String,seqs::Dict{String,String};cut_end=0)
+    f = open(out_f,"w")
+
+    for k in keys(seqs)
+	if cut_end == 0
+	    s = seqs[k]
+	else
+	    s = seqs[k][1:cut_end]
+	end
+	print(f,">$k\n$s\n")
+	
+    end
+    close(f)
+end
+
 function main()
     parser = ArgumentParser(prog = "analyse_alignment_on_reference.jl",
                         description = "Evaluate how many 16s copies we are able to identify",
@@ -125,58 +145,94 @@ function main()
     add_argument!(parser, "--contig","-c", help = "Contig",type = String)
     add_argument!(parser, "--genus","-g", help = "Genus",type = String)
     args = parse_args(parser)
+    #Not command line parameters
+    min_al_idfrac = 0.7 # length of contig aligned
+    min_al_lenfrac = 0.7 # identity fraction
+    write_ref_seq = false # write matching reference sequence instead of a contig - for testing
+    
+    #dat of all matches on reference will be collected for filtering
+    matches = DataFrame(Contig_ID = Array{String,1}(),
+		        Ref_ID = Array{String,1}(),
+			Match_length = Array{Int64,1}(),
+			Identity = Array{Float64,1}(),
+			Coverage_contig = Array{Float64,1}(),
+			Coverage_ref = Array{Float64,1}(),
+			Contig_start = Array{Int64,1}(), 
+			Contig_end = Array{Int64,1}(), 
+			Ref_start = Array{Int64,1}(), 
+			Ref_end = Array{Int64,1}(),
+			Ref_genus = Array{String,1}(),
+			Expected_genus = Array{Bool,1}())
+			
+    out_seqs = Dict{String,String}()
     genus_assigns = parse_genus_info(args.genus)
-    min_al_frac = 0.7
-    ends = Dict{String,Array{Int64,1}}()
-
+    costmodel = BioAlignments.CostModel(match=0, mismatch=1, insertion=1, deletion=1);
     testseqs =  parse_fasta(args.contig)
-
-    matched_contigs = Dict{String,Array{String,1}}()
-    reader = open(BAM.Reader,args.inbam,index = args.inbam*".bai")
+    ref =  parse_fasta(args.ref)
+    print(args.inbam)	
+    reader = open(BAM.Reader,args.inbam)
+    ct = 0 
+    
     for record in reader
         if BAM.ismapped(record) #&& SAM.isprimary(record)
-            aln = BioAlignments.BAM.alignment(record)
+            ct += 1
+	    pos = BAM.position(record)
+            seq = BAM.sequence(record)
+            rpos = BAM.rightposition(record)
+            aln = XAM.BAM.alignment(record)
             s = first(aln.anchors).refpos
             e = last(aln.anchors).refpos
-            l = abs(s-e)+1
+            l = abs(s-e)
             rn = BAM.refname(record)
-	    qual = BioAlignments.BAM.mappingquality(record)
+	    qual = XAM.BAM.mappingquality(record)
 	    tempname = BAM.tempname(record)
 	    genus = genus_assigns[split(tempname,"_")[1]]
 	    real_length = length(testseqs[BAM.tempname(record)])
-	    tempname = BAM.tempname(record)*":$l"
+	    tempname = BAM.tempname(record)
+	    t_pos=BioAlignments.ref2seq(aln,pos)
+	    t_rpos=BioAlignments.ref2seq(aln,rpos)
+	    rtseq = ref[rn][pos:rpos]
+	    tseq = testseqs[tempname][t_pos[1]:t_rpos[1]]
 	    ff = findfirst(lowercase(genus),lowercase(rn))
-	    if ff != nothing 
-		if (l/real_length >= min_al_frac)  && (ff.start==1) 
-		    if !(rn in keys(ends))
-			ends[rn] = Array{Int64,1}()
-			matched_contigs[rn] = Array{String,1}()
-		    end
-		    push!(ends[rn],e)
-		    push!(matched_contigs[rn],tempname)
-		end
+	    expected_g = false
+	    if ff != nothing && ff.start == 1
+		expected_g = true
 	    end
+
+
+
+
+	    
+	    #println("PAIR: \n>r\n$rtseq\n>t\n$tseq\n---------------")
+	    pairalnres = BioAlignments.pairalign(BioAlignments.EditDistance(),rtseq,tseq,costmodel)
+	    pairaln = BioAlignments.alignment(pairalnres)
+	    matched = BioAlignments.count_matches(pairaln)
+	    idfrac = matched/l
+	    lfrac_c = l/real_length
+	    lfrac_r = l/length(ref[rn])
+	    df_row=[tempname,rn,l,idfrac,lfrac_c,lfrac_r,t_pos[1],t_rpos[1],pos,rpos,genus,expected_g]
+	    push!(matches,df_row)
+	    
         end
     end
     close(reader)
-
-    seqs  = parse_fasta(args.ref)
-    inidata  = DataFrame(Species = Array{String,1}(), Contig = Array{String,1}(),Maximum_length = Array{Int64,1}(),Assemblies = Array{String,1}())
-    fo = open(args.output,"w")
-    for k in keys(ends)
-        maxl = maximum(ends[k])
-        contig = k
-        species = split(contig,":")[1]
-	choose = Array{Tuple{String,Int64},1}()
-	for mc in matched_contigs[k]
-	    parts = split(mc,";")
-	    push!(choose,(  parts[1],parse(Int64,split(parts[2],":")[2])  ))
+    matches_expected = @where(matches, :Expected_genus .== 1)
+    CSV.write(args.output*".info.csv", matches,delim='\t')
+    ref_c_ds = groupby(matches_expected,:Ref_ID)
+    lens =Array{Int64,1}()
+    for ref_c_d in ref_c_ds
+	df = DataFrame(ref_c_d)
+	df = @where(df,:Coverage_contig .>= min_al_idfrac, :Identity .>= min_al_idfrac)
+	df = sort(df, :Match_length,rev=true)
+	s = df[1,:]
+	if write_ref_seq
+	    out_seqs[s.Contig_ID] = ref[s.Ref_ID][s.Ref_start:s.Ref_end]
+	else
+	    out_seqs[s.Contig_ID] = testseqs[s.Contig_ID]#[s.Contig_start:s.Contig_end]
 	end
-	sort!(choose,by=x->x[2],rev=true)
-	println(fo,choose[1][1]*";")
-	#println(stderr,choose[1][1])
+	push!(lens,length(testseqs[s.Contig_ID]))
     end
-    close(fo)
+    fasta_from_dict(args.output,out_seqs)#,cut_end = minimum(lens))
 end
 
 main()

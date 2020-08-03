@@ -1,5 +1,4 @@
 #!python
-
 import fnmatch
 import logging
 import logging.config
@@ -8,8 +7,13 @@ import re
 import sys
 import yaml
 from shutil import copyfile
-
-
+# Check singularity SINGULARITY_BINDPATH value
+if not "SINGULARITY_BINDPATH" in os.environ.keys():
+    raise Exception("Any directory fo singularity binding is not define.\n Please read README and define an enviromental variable SINGULARITY_BINDPATH ")
+else:
+    print("The following directories will be bind to a singularity container (SINGULARITY_BINDPATH): ",os.environ["SINGULARITY_BINDPATH"])
+if not  os.path.exists("singularity/julia.sif"):
+    raise Exception("The required singularity container is not available.\n Please read README, dwonload it and do not forget to define an enviromental variable SINGULARITY_BINDPATH")
 # ------------------------------ Include Snakefiles ------------------------- #
 include: "./snakefiles/0_0_utilities.smk"
 include: "./snakefiles/0_1_configuration.smk"
@@ -20,8 +24,9 @@ include: "./snakefiles/4_0_assembly.smk"
 include: "./snakefiles/4_1_methagenome.smk"
 include: "./snakefiles/4_2_prepare_reads.smk"
 include: "./snakefiles/4_3_sanitise_contigs.smk"
-include: "./snakefiles/5_0_qc.smk"
 include: "./snakefiles/4_4_sanitise_contigs_clusters.smk"
+include: "./snakefiles/5_0_qc.smk"
+include: "./snakefiles/6_4integration_testing.smk"
 
 init_log()
 wlogger = logging.getLogger("custom_workflow")
@@ -35,15 +40,14 @@ wlogger.info(f'Output direcoty: [{CONFIG["OUT-DIR"]}]')
 
 localrules: filterout_r1primer_sequence_having_reads_on16S
 
-
 rule all:
     input:
         #OUT + "/INSERT_SIZE/all.csv",
+        #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
-        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
-        expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
-        expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon2.csv",stem=STEMS),
-        #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_cluster_quant.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon2.csv",stem=STEMS),
         #OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",

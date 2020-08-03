@@ -1,0 +1,131 @@
+##########################################
+# Program detects 3' ends of transcripts #
+##########################################
+
+
+########################################
+# Source of FASTQ.GZ files.       #
+# Should be .fq.gz or .fastq.gz files. #
+########################################
+
+INPUT-DIR: /media/root/ngs_nas3/2020_03_30_Geordi_phased_primers 
+SAMPLES:   Zymo-even-2 Zymo-even-1
+UMI_SAMPLES:  "S3"
+LANE-REGEX: "L\\d\\d\\d_"
+TMP-DIR: tmp_zymo_even0331_zymo
+OUT-DIR: output_zymo_even0331_zymo
+SCRATCH: tmp_zymo
+BENCH-DIR: bench_coli
+BENCHMARKS: benchmarks
+
+#############################
+# Primer sequences fltering #
+#############################
+rRNA: /mnt/beegfs/Databases/BACTERIA/ZYMO1/bacterial_rRNA_16s_uniq.fasta
+
+PRIMERS:
+    R1: datasets/bbmap/R1_v3.fasta #sequences that must occure in R1
+    R1_4trim: datasets/bbmap/R1_v3_4trim.fasta #sequences that must occure in R1
+    R1_k: 15 #minimum lenth of substring to match
+    R2: datasets/bbmap/R2_v3.fasta #sequences that must not occure in R1
+    R2_k: 15 #minimum lenth of substring to match
+
+USE-ERROR-CORRECTION: False
+
+ASSEMBLER: BBMERGE  #BBMERGE #SPADES  #SPADES # BBMERGE
+SPADES:
+    include: merged_reads #bbmerge_contigs   #bbmerge_contigs # merged_reads
+    min_length_of_merged_reads: 500
+#Parameters for filterin out 16S havving reads
+16S:
+    DB:
+        fasta: /media/root/ocean/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta
+        k: 40 # kmer matching 16S for reads filtering
+    hmm_reads:
+        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        e: 1000
+        ts: 600
+        te: 1000
+        rs: 1
+        re: 350
+        length: 200 #match length in read
+        max_R2_fraction: 0.3
+    hmm_contigs:
+        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        e: 1000
+        ts: 550
+        te: 990
+        rs: 1
+        re: 560
+        length: 301  #match length in read
+        max_R2_fraction: 0.3
+
+min_contig_length: 400
+max_contig_length: 12000000000
+clustering_frac: 0.97
+ref:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+ref4picard:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic_simple_names.fasta
+#########################
+# CPU and memory params #
+#########################
+MACHINE:
+    threads_julia: 12
+    memory_java: 4
+    threads_sambamba: 8
+    threads_spades: 24
+    threads_barnap: 12
+    threads_cdhit: 12
+    threads_nhmmer: 12
+    threads_bwa: 12
+    threads_salmon: 12
+    threads_kraken: 12
+    threads_blast: 6
+    threads_swarm: 6
+    threads_dada: 6
+
+##############
+# References #
+##############
+REFERENCE: datasets/small_dataset/references/GRCh38.primary_assembly.chr21_reduced.fa
+TRANSCRIPTS:
+GFF3: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gff3
+GTF: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gtf
+###################
+# Fastqc options. #
+###################
+FASTQC:
+    kmer_size: 5   # [5]
+
+############
+# Trimming #
+############
+BBDUK:
+    threads: 8
+    ref: datasets/bbmap/two_short.fa
+    ktrim: r
+    k: 23
+    mink: 11
+    hdist: 1
+    minlength: 250
+    maxns: 0
+    qtrim: r
+    trimq: 20
+    additional_params: "tpe tbo"
+
+###############
+# Subsampling #
+###############
+SUBSAMPLING:
+    threads: 4
+    run: False
+    subsample_to:
+
+###############
+# QC          #
+###############
+DNA_GC:
+    win_size: 100
+
+KRAKEN_DB:  /mnt/beegfs/Databases/KRAKEN/16S_Greengenes_20190418
+BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v132_train_set.fa.gz
