@@ -77,14 +77,22 @@ rule get_testing_file:
          "testing_clustering/"+config["dt"]+"/contigs_{stem}prep.fasta"
     shell: "cp {input} {output}"
 
+rule cp_contigs4test:
+    input:
+        "datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
+    output:
+        "testing/contigs4test.fasta"
+    shell:
+        "cp {input} {output} "
+
 rule cut_first_250_4test:
     input:
-         "testing_clustering/{stem}.fasta"
+        "testing/contigs4test.fasta"
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
     output:
-         "testing_clustering/{stem}_250.fasta"
+        "testing/contigs4test_250bp.fasta"
     params:
-        add =       " ", #"  ftr=239 maxns=0 ",
+        add =       " ftr=239 maxns=0 ", #"  ftr=239 maxns=0 ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -95,6 +103,7 @@ rule cut_first_250_4test:
                 " {params.add} " +
                 " overwrite=t " +
                 "-Xmx{params.m}g "
+
 
 rule test_clustering_and_assignment:
     input:
@@ -802,136 +811,6 @@ rule cluster_with_unoise:
         '''
 
 
-#rule get_final_contigs:
-#    input:
-        #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades_size400.fasta",
-        #tmp + "/16S_amplicons/{stem}_left_reads_tadpoleandspades.fasta",
-        #tmp + "/16S_amplicons/{stem}_left_reads_assembledspades.fasta",
-        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size300min_cluster.fasta",
-        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole_size400min_cluster.fasta",
-        #tmp + "/16S_amplicons/{stem}_left_reads_assembledtadpole.fasta",
-        #tmp + "/16S_amplicons/{stem}_L001_merged_bbduk_size_vsearchcl.fasta",
-        #tmp + "/16S_amplicons/{stem}_L001_merged_woN_size_woident_swarm_wosinglets_unoise.fasta",
-#    output:
-        #tmp + "/{stem}_notonly16scontigs.fasta",
-#        tmp + "/{stem}_final_contigs.fasta"
-#    shell:
-#        " cp  {input} {output}  "
-
-if CONFIG["ASSEMBLER"] == "SPADES":
-    if config["SPADES"]["include"] == "bbmerge_contigs":
-        rule assemble:
-            input:
-                choose_err_cor,
-                tmp + "/{stem}_contigs_bbmerge_clustered.fasta"
-                #tmp + "/{stem}_001merged.fastq.gz"
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py  -1 {input[0]} -2 {input[1]} --trusted-contigs {input[2]} " +
-                "  -k 127  -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta  {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-
-    if config["SPADES"]["include"] == "merged_reads":
-        rule custer4spades:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected_fq2fa.fasta",
-            output:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected_fq2fa_clustered.fasta",
-            params:
-                clustering_frac = CONFIG["clustering_frac"]
-            threads:
-                CONFIG["MACHINE"]["threads_cdhit"]
-            shell:
-                "cd-hit-est -T {threads} -c {params.clustering_frac} -i {input} -o {output} "
-
-        rule get_name_merged:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz"
-            output:
-                tmp + "/16S_having_reads/{stem}_merged.names"
-            shell:
-                " seqkit seq --name  {input} | cut -f1 -d ' ' > {output} "
-
-        rule extract_long_insert_overlaping_pairs:
-            input:
-                choose_err_cor,
-                tmp + "/16S_having_reads/{stem}_merged.names"
-            output:
-                r1 = tmp + "/16S_having_reads/{stem}_L001_R1_001_longins.fastq.gz",
-                r2 = tmp + "/16S_having_reads/{stem}_L001_R2_001_longins.fastq.gz",
-            shell:
-                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   +
-                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"
-
-        rule assemble:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_R1_unmerged_001.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_R2_unmerged_001.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz",
-                tmp + "/{stem}_contigs_bbmerge.fasta",
-                OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_R2_unmerged_001_normalised.fastq.gz",
-                tmp + "/16S_having_reads/{stem}_merged.names",
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected.fastq.gz",
-
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py   -s {input[7]} " +  " -k 127  " +
-                "    -t {threads}   -o {params.spades_dir}  --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta   {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-
-    if config["SPADES"]["include"] == "none":
-        rule assemble:
-            input:
-                OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
-                OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py  -1 {input[0]} -2 {input[1]} " +  #"-s {input[2]} " +
-                "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-
-rule assemble_normalise:
-    input:
-        "{stem}.fastq.gz"
-    output:
-       "{stem}_normalised.fastq.gz"
-    log:
-        LOGS + "/normlising_{stem}.log"
-    params:
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
-    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
-                "bbnorm.sh in={input} out={output} target=50 min=2  threads={threads} " +
-                "-Xmx{params.m}g &> {log}"
-
 
 rule fastq_to_fasta:
     input:
@@ -940,16 +819,6 @@ rule fastq_to_fasta:
         "{stem}_fq2fa.fasta"
     shell:
         "seqkit fq2fa {input} -o {output}"
-
-rule filter_fastq_by_length:
-    input:
-        "{stem}.fastq.gz"
-    output:
-        "{stem}_size_filetered.fastq.gz"
-    params:
-        minlen = CONFIG["SPADES"]["min_length_of_merged_reads"]
-    shell:
-        "seqkit seq -m {params.minlen} -o {output} {input}"
 
 rule merge_16S_reads:
     input:
@@ -1170,106 +1039,6 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
         "singularity/julia.sif scripts/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
-
-
-
-
-if CONFIG["ASSEMBLER"] == "SPADES":
-    if config["SPADES"]["include"] == "bbmerge_contigs":
-        rule assemble:
-            input:
-                choose_err_cor,
-                tmp + "/{stem}_contigs_bbmerge_clustered.fasta"
-                #tmp + "/{stem}_001merged.fastq.gz"
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py  -1 {input[0]} -2 {input[1]} --trusted-contigs {input[2]} " +
-                "  -k 127  -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta  {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-
-    if config["SPADES"]["include"] == "merged_reads":
-        rule custer4spades:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected_fq2fa.fasta",
-            output:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected_fq2fa_clustered.fasta",
-            params:
-                clustering_frac = CONFIG["clustering_frac"]
-            threads:
-                CONFIG["MACHINE"]["threads_cdhit"]
-            shell:
-                "cd-hit-est -T {threads} -c {params.clustering_frac} -i {input} -o {output} "
-
-        rule get_name_merged:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz"
-            output:
-                tmp + "/16S_having_reads/{stem}_merged.names"
-            shell:
-                " seqkit seq --name  {input} | cut -f1 -d ' ' > {output} "
-
-        rule extract_long_insert_overlaping_pairs:
-            input:
-                choose_err_cor,
-                tmp + "/16S_having_reads/{stem}_merged.names"
-            output:
-                r1 = tmp + "/16S_having_reads/{stem}_L001_R1_001_longins.fastq.gz",
-                r2 = tmp + "/16S_having_reads/{stem}_L001_R2_001_longins.fastq.gz",
-            shell:
-                " seqkit grep -f {input[2]} -o {output[0]} {input[0]} ;"   +
-                " seqkit grep -f {input[2]} -o {output[1]} {input[1]} ;"
-
-        rule assemble:
-            input:
-                OUT + "/16S_having_reads_merged/{stem}_L001_R1_unmerged_001.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_R2_unmerged_001.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered.fastq.gz",
-                tmp + "/{stem}_contigs_bbmerge.fasta",
-                OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
-                OUT + "/16S_having_reads_merged/{stem}_L001_R2_unmerged_001_normalised.fastq.gz",
-                tmp + "/16S_having_reads/{stem}_merged.names",
-                OUT + "/16S_having_reads_merged/{stem}_L001_merged_001_size_filetered_corrected.fastq.gz",
-
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py   -s {input[7]} " +  " -k 127  " +
-                "    -t {threads}   -o {params.spades_dir}  --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta   {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
-
-    if config["SPADES"]["include"] == "none":
-        rule assemble:
-            input:
-                OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
-                OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
-            output:
-                tmp + "/{stem}_contigs.fasta", tmp + "/{stem}.fastg"
-            benchmark:
-                bench + "/assemble_{stem}.log"
-            params:
-                spades_dir = tmp + "/{stem}_contigs"
-            threads:
-                CONFIG["MACHINE"]["threads_spades"]
-            shell:
-                "rnaspades.py  -1 {input[0]} -2 {input[1]} " +  #"-s {input[2]} " +
-                "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
-                "cp {params.spades_dir}/transcripts.fasta {output[0]}; " +
-                "cp {params.spades_dir}/assembly_graph.fastg {output[1]}"
 
 
 
@@ -1842,45 +1611,3 @@ rule mark_primer_sequences:
                 "kmask=N  overwrite=t " +
                 "-Xmx{params.m}g "
 
-rule mark_rRNA_seq:
-    input:
-        tmp + "/{stem}_subs_amplicons_markedprimers.fasta"
-    output:
-        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA.fasta"
-    params:
-        ref =       CONFIG["rRNA"],
-        k =         40,
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
-    shell:
-        "bbduk.sh in={input[0]} out={output[0]} " +
-                "ref={params.ref} threads={threads} " +
-                " k={params.k} hammingdistance=1   " +
-                " threads={threads} " +
-                "kmask=lc  overwrite=t " +
-                "-Xmx{params.m}g "
-
-
-rule extract_rRNA_seq_having:
-    input:
-        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA.fasta"
-    output:
-        tmp + "/{stem}_subs_amplicons_markedprimers_markedrRNA_onlyrRNAhaving.fasta"
-    params:
-        ref =       CONFIG["rRNA"],
-        k =         40,
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/filteringR1_{stem}.log"
-    shell:
-        "bbduk.sh in={input[0]} outm={output[0]} " +
-                "ref={params.ref} threads={threads} " +
-                " k={params.k} hammingdistance=1   " +
-                " threads={threads} " +
-                " overwrite=t " +
-                "-Xmx{params.m}g "

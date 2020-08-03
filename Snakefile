@@ -24,8 +24,9 @@ include: "./snakefiles/4_0_assembly.smk"
 include: "./snakefiles/4_1_methagenome.smk"
 include: "./snakefiles/4_2_prepare_reads.smk"
 include: "./snakefiles/4_3_sanitise_contigs.smk"
-include: "./snakefiles/5_0_qc.smk"
 include: "./snakefiles/4_4_sanitise_contigs_clusters.smk"
+include: "./snakefiles/5_0_qc.smk"
+include: "./snakefiles/6_4integration_testing.smk"
 
 init_log()
 wlogger = logging.getLogger("custom_workflow")
