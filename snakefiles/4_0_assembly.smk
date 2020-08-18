@@ -16,6 +16,24 @@ def choose_err_cor(wildcards):
 
 #ass embe genetic part
 
+rule get_prefix:
+    input:
+       "{stem}.fastq.gz"
+    output:
+       "{stem}_prefix{d,[0-9]+}.fastq.gz"
+    params:
+        n =    "{d,[0-9]+}",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        " ftrl=$(({params.n}-1))  ; bbduk.sh in={input[0]} out={output[0]} " +
+                " threads={threads} " +
+                " minlength={params.n} " +
+                " ftr=$ftrl maxns=0 " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
+
 rule cut_first_250_bp:
     input:
        #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
@@ -131,7 +149,7 @@ rule merge_4dedup:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
 
@@ -144,21 +162,28 @@ rule merge_4dedup:
     benchmark:
         BENCHMARKS + "/merge_4dedup_{stem}.log"
     shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
-        "bbmerge.sh   in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+        "bbmerge.sh   in={input[0]}" + #ecct extend2=50 iterations=10
                 " in2={input[1]} " +
                 " threads={threads} " +
+                " out={output[0]} " +
                 " outu1={output[1]} " +
                 " outu2={output[2]} " +
                 "-Xmx{params.m}g &> {log}"
 
-
+rule get_merged_R2:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_merged.fastq.gz",
+    shell:
+        " seqkit seq --reverse --complement -o {output} {input}  "
 rule cut_trim_R2_unmerged:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_filteredAndCut.fastq.gz",
     params:
-        add  =  " minlength=220 ftr=219 maxns=0" ,
+        add  =  " minlength=100 ftr=99 maxns=0" ,
     threads:
         CONFIG["BBDUK"]["threads"]
     shell:
