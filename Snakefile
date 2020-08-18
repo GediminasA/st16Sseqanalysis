@@ -8,12 +8,15 @@ import sys
 import yaml
 from shutil import copyfile
 # Check singularity SINGULARITY_BINDPATH value
+if not  os.path.exists("singularity/julia.sif"):
+    print("The required singularity container is not available.\n Please read README, its beeing downloaded ...")
+    if not  os.path.exists("singularity"):
+        os.mkdir("singularity")
+    os.system("singularity build  singularity/julia.sif docker://galzbutas/julia4bioinformatics")
 if not "SINGULARITY_BINDPATH" in os.environ.keys():
     raise Exception("Any directory fo singularity binding is not define.\n Please read README and define an enviromental variable SINGULARITY_BINDPATH ")
 else:
     print("The following directories will be bind to a singularity container (SINGULARITY_BINDPATH): ",os.environ["SINGULARITY_BINDPATH"])
-if not  os.path.exists("singularity/julia.sif"):
-    raise Exception("The required singularity container is not available.\n Please read README, dwonload it and do not forget to define an enviromental variable SINGULARITY_BINDPATH")
 # ------------------------------ Include Snakefiles ------------------------- #
 include: "./snakefiles/0_0_utilities.smk"
 include: "./snakefiles/0_1_configuration.smk"
