@@ -59,7 +59,9 @@ The workflow uses an singularity image. Before running the tests or analyses you
 * Run `snakemake` to perform analysis itself:
 ```bash
    #Presume that 12 threads are available (option -j 12) and you allow to accsess /mnt/beegfs
-   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --configfile example.yaml -j 12 --use-conda --conda-frontend mamba -j 12
+   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --configfile configs/example.yaml -j 12 --use-conda --conda-frontend mamba 
+   # An example with cluster
+   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --configfile configs/example.yaml --use-conda --conda-frontend mamba --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd" -j 96 --cluster-config cluster.json
 ```
 
 This would run an analysis on a small dataset matching simulated data matching Zymo standard (https://www.zymoresearch.com/collections/zymobiomics-microbial-community-standards/products/zymobiomics-microbial-community-dna-standard). 
