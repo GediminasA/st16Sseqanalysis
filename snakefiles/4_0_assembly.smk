@@ -10,9 +10,6 @@ def choose_err_cor(wildcards):
 
 
 
-#rule cluster the cut first 250
-
-
 
 #ass embe genetic part
 
@@ -33,6 +30,16 @@ rule get_prefix:
                 " ftr=$ftrl maxns=0 " +
                 " overwrite=t " +
                 "-Xmx{params.m}g "
+
+rule subset:
+    input:
+        "{stem}.fastq.gz"
+    output:
+       "{stem}_sample{d,[0-9]+}.fastq.gz"
+    params:
+        n =    "{d,[0-9]+}"
+    shell:
+        "seqkit sample -s 1 -o {output} -n {params.n} {input}"
 
 rule cut_first_250_bp:
     input:
@@ -177,6 +184,304 @@ rule get_merged_R2:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_merged.fastq.gz",
     shell:
         " seqkit seq --reverse --complement -o {output} {input}  "
+
+
+rule clumpify:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump1.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump1.fastq.gz",
+
+    log:
+        LOGS + "/clumpify1_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify1_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify2:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump2.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump2.fastq.gz",
+    log:
+        LOGS + "/clumpify2_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify2_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=t " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify3:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump3.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump3.fastq.gz",
+    log:
+        LOGS + "/clumpify3_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify3_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=t subs=5 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify4:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump4.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump4.fastq.gz",
+    log:
+        LOGS + "/clumpify4_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify4_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=t unpair=t repair=t consensus=t ecc=t passes=6 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify5:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump5.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump5.fastq.gz",
+    log:
+        LOGS + "/clumpify5_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify5_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=t unpair=t repair=t consensus=t ecco=t passes=6 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify6:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump6.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump6.fastq.gz",
+    log:
+        LOGS + "/clumpify6_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify6_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=t unpair=t repair=t consensus=t  " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+
+
+
+
+
+
+
+rule clumpify2b:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump2b.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump2b.fastq.gz",
+    log:
+        LOGS + "/clumpify2b_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify2b_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify3b:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump3b.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump3b.fastq.gz",
+    log:
+        LOGS + "/clumpify3b_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify3b_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f subs=5 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify4b:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump4b.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump4b.fastq.gz",
+    log:
+        LOGS + "/clumpify4b_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify4b_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f unpair=t repair=t consensus=t ecc=t passes=6 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify5b:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump5b.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump5b.fastq.gz",
+    log:
+        LOGS + "/clumpify5b_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify5b_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f unpair=t repair=t consensus=t ecco=t passes=6 " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+rule clumpify6b:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_clump6b.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_clump6b.fastq.gz",
+    log:
+        LOGS + "/clumpify6b_{stem}_{stem2}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/clumpify6b_{stem}_{stem2}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "clumpify.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " dedupe=t  containment=f unpair=t repair=t consensus=t  " +
+                " out={output[0]} " +
+                " out2={output[1]} " +
+                "-Xmx{params.m}g &> {log}"
+
+
+rule merge_4dedup_permisive:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_mergedperm.fastq.gz",
+
+    log:
+        LOGS + "/merge_4dedup_andnotoverlaping_{stem}.log"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/merge_4dedup_andnotoverlaping_{stem}.log"
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "bbmerge.sh   in={input[0]}" + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " rem vstrict=t k=190 iterations=5 " +
+                " out={output[0]} " +
+                "-Xmx{params.m}g &> {log}"
+
 rule cut_trim_R2_unmerged:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
@@ -206,6 +511,29 @@ rule cut_trim_R1_unmerged:
         " threads={threads} " +
         " {params.add} threads={threads} " +
         " overwrite=t "
+
+rule pardre:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_{stem2}_pardreD{d,[0-9]+}.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_{stem2}_pardreD{d,[0-9]+}.fastq.gz",
+    log:
+        LOGS + "/pardreD{d,[0-9]+}_{stem}_{stem2}.log"
+    params:
+        d = "{d,[0-9]+}"
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    benchmark:
+        BENCHMARKS + "/pardreD{d,[0-9]+}_{stem}_{stem2}.log"
+    shell:
+        '''
+        echo check {log}
+        ./binaries/ParDRe -i {input[0]} -p {input[1]} -o {output[0]} -r {output[1]} -z -t {threads} -m {params.d} &> {log}
+        '''
+
+
 
 rule match_pairs_ded:
     input:
@@ -654,6 +982,14 @@ rule remove_s_with_N:
         "{stem}.fasta"
     output:
         "{stem}_woN.fasta"
+    shell:
+        "bbduk.sh in={input} out={output} maxns=0  "
+
+rule remove_s_with_N2:
+    input:
+        "{stem}.fastq.gz"
+    output:
+        "{stem}_woN.fastq.gz"
     shell:
         "bbduk.sh in={input} out={output} maxns=0  "
 
