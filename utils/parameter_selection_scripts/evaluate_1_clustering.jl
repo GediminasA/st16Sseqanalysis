@@ -1,3 +1,4 @@
+push!(LOAD_PATH, "scripts/julia_modules/ArgParse2.jl/src")
 using ArgParse2
 using DataFrames 
 using DataFramesMeta 
@@ -14,7 +15,10 @@ function main()
     args = parse_args(parser)
     ref_data = CSV.read(args.reference_values)
     println("File CorvsMaximumcluster CorvsTotal CorvsNumberOfClusters NumberOfClusters DetectedReqGenus")
-    ct = 0 
+    ct = 0
+    cor1 = 0 
+    cor2 = 0 
+    cor3 = 0 
     for cntf in args.read_counts        
         ct += 1
         print(stderr,ct," ",cntf,"\n") 
@@ -26,10 +30,11 @@ function main()
         dd1 =join(counts1,ref_data, on = :Genus2 => :Genus, kind = :inner)
         dd2 =join(counts2,ref_data, on = :Genus2 => :Genus, kind = :inner)
         dd3 =join(counts3,ref_data, on = :Genus2 => :Genus, kind = :inner)
-        cor1 = cor( dd1[:,:Maximum_abundance]  ,  dd1[:,Symbol("16S")] )
-        cor2 = cor( dd2[:,:Total_abundance]  ,  dd2[:,Symbol("16S")] )
-        cor3 = cor( dd3[:,:Number_of_sequences]  ,  dd3[:,Symbol("16S")] )
-
+        if (nrow(dd1) > 1)
+            cor1 = cor( dd1[:,:Maximum_abundance]  ,  dd1[:,Symbol("16S")] )
+            cor2 = cor( dd2[:,:Total_abundance]  ,  dd2[:,Symbol("16S")] )
+            cor3 = cor( dd3[:,:Number_of_sequences]  ,  dd3[:,Symbol("16S")] )
+        end 
         println(cntf," ",cor1," ",cor2," ",cor3," ", sum(dd3[:,:Number_of_sequences])," ",nrow(dd1))
     end 
 end
