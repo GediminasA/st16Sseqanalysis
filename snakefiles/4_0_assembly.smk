@@ -534,21 +534,36 @@ rule pardre:
         '''
 
 def vsearch_paired_input(wildcards):
-    f1c,f2c=wildcards.stem3.split("|")
+    f1c,f2c=wildcards.stem3.split("X")
     print(f1c,f2c)
-    f1=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini_{wildcards.stem2}_{f1c}.fasta"
-    f2=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini_{wildcards.stem2}_{f2c}.fasta"
-    return(f1,f2)
+    f1=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini_{wildcards.stem2}_woident_{f1c}.fasta"
+    f2=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini_{wildcards.stem2}_woident_{f2c}.fasta"
+    f3=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini.fastq.gz"
+    f4=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini.fastq.gz"
+    return(f1,f2,f3,f4)
 
 rule vsearch_paired:
     input:
         vsearch_paired_input
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
+    threads: 4
     shell:
         '''
-        singularity/julia.sif scripts/cluster_intersect.jl
+        julia scripts/cluster_intersect.jl -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
+        '''
+
+rule vsearch_paired_sw:
+    input:
+        vsearch_paired_input
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
+    threads: 4
+    shell:
+        '''
+        julia scripts/cluster_intersect.jl -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
         '''
 
 

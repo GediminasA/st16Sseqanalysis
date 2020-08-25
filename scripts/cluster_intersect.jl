@@ -4,6 +4,7 @@ using FastaIO
 using FASTX 
 using Base.Threads
 using ProgressMeter
+using Suppressor
 push!(LOAD_PATH, "scripts/julia_modules/ArgParse2.jl/src")
 println()
 using ArgParse2
@@ -12,7 +13,7 @@ using ArgParse2
 
 function write_out(centroids::Array{String,1},mapping::Array{Tuple{Array{String,1},String},1},outf::String)
     fo = open(outf,"w")
-    println("Riting out to $outf  ...")
+    println("Writing out to $outf  ...")
     @showprogress 1 "Writing out to $outf ..." for i in 1:length(centroids)
     #for i in 1:length(centroids)
         seq = centroids[i]
@@ -22,32 +23,37 @@ function write_out(centroids::Array{String,1},mapping::Array{Tuple{Array{String,
     close(fo)
 end
 
-function write_out_fastq(seqs::Dict{String,FASTX.FASTQ.Record}, mapping::Array{Tuple{Array{String,1},String},1},outf::String)
-    fo = FASTQ.Writer(GzipCompressorStream(open(outf,"w")))
-    println("Riting out to $outf  ...")
-    @showprogress 1 "Writing out to $outf ..." for pair in mapping 
-   # for pair in mapping 
-        centroid = seqs[pair[2]]
-        for seq_id in pair[1]
-            cluster_mem =  FASTQ.Record(seq_id, FASTX.FASTQ.sequence(centroid), FASTX.FASTQ.quality(centroid))
-            write(fo,cluster_mem)
-        end 
-        #seq = centroids[i]
-        #name = mapping[i][2]
-        #print(fo,">$name\n$seq\n")
+function write_out_fastq(seqs1::Dict{String,FASTX.FASTQ.Record},
+                         seqs2::Dict{String,FASTX.FASTQ.Record},
+                         mapping::Array{String,1},
+                         outf1::String,
+                         outf2::String,
+                        )
+    fo1 = FASTQ.Writer(GzipCompressorStream(open(outf1,"w")))
+    fo2 = FASTQ.Writer(GzipCompressorStream(open(outf2,"w")))
+    println("Writing out to $outf1  ...")
+    println("Writing out to $outf2  ...")
+    @showprogress 1 "Writing out to $outf1 $outf2 ..." for seq_id in mapping 
+        centroid1 = seqs1[seq_id]
+        centroid2 = seqs2[seq_id]
+        cluster_mem1 =  FASTQ.Record(seq_id, FASTX.FASTQ.sequence(centroid1), FASTX.FASTQ.quality(centroid1))
+        cluster_mem2 =  FASTQ.Record(seq_id, FASTX.FASTQ.sequence(centroid2), FASTX.FASTQ.quality(centroid2))
+        write(fo1,cluster_mem1)
+        write(fo2,cluster_mem2)
     end
-    close(fo)
+    close(fo1)
+    close(fo2)
 end
 
-function run_clustering(seqs::Dict{String,FASTX.FASTQ.Record}, mapping::Array{Array{String,1},1})
+function run_clustering(seqs::Dict{String,FASTX.FASTQ.Record}, mapping::Array{Array{String,1},1};swarm=false)
     seqs2 = Dict{String,String}()
     for k in keys(seqs)
         seqs2[k] = FASTX.FASTQ.sequence(seqs[k])
     end 
-    run_clustering(seqs2,mapping)
+    run_clustering(seqs2,mapping,swarm=swarm)
 end
  
-function run_clustering(seqs::Dict{String,String}, mapping::Array{Array{String,1},1})
+function run_clustering(seqs::Dict{String,String}, mapping::Array{Array{String,1},1};swarm=false)
     #mapping = mapping[1:10000]
     n = length(mapping)
     p = Progress(n)
@@ -56,18 +62,20 @@ function run_clustering(seqs::Dict{String,String}, mapping::Array{Array{String,1
     Threads.@threads for i in 1:n
                 r1s = mapping[i]
                 if length(r1s) == 1
-                    centroids[i] = seqs[r1s[1]]
+                    centroids[i] = r1s[1]
                 else
-                    centroids[i] = cluster_r2(r1s, seqs,t=3)
+                    centroids[i] = cluster_r2(r1s, seqs,t=3,swarm=swarm)
                 end
                 next!(p)
     end
     return(centroids)
 end
 
-function cluster_r2(r1s::Array{String,1},r2_seqs::Dict{String,String};id=0.97,t=12)
+function cluster_r2(r1s::Array{String,1},r2_seqs::Dict{String,String};id=0.94,t=12,swarm=false)
     tmpdir = mktempdir("/dev/shm"; prefix="vsearch_", cleanup=false)
     f_names = "$tmpdir/input.fasta"
+    f_names_de = "$tmpdir/input_woident.fasta"
+    f_names_de_won = "$tmpdir/input_woident_won.fasta"
     r_names = "$tmpdir/clustered.fasta"
     best = "$tmpdir/best.fasta"
     fo = open(f_names,"w")
@@ -76,12 +84,24 @@ function cluster_r2(r1s::Array{String,1},r2_seqs::Dict{String,String};id=0.97,t=
         println(fo,">$n\n$seq\n")
     end
     close(fo)
-    cluster = run(`vsearch --quiet --cluster_size $f_names --sizeout --threads $t --centroids $r_names --id $id`)
+    cluster = run(`vsearch --quiet --derep_fulllength $f_names --sizeout  --output $f_names_de`)
+    if swarm
+        try 
+            @suppress begin
+                cluster = run(`bbduk.sh  maxns=0  in=$f_names_de out=$f_names_de_won`)
+                cluster = run(`swarm -z  $f_names_de_won -t $t -w $r_names -d 2 `)
+            end 
+        catch 
+            cluster = run(`vsearch --quiet --sizein --cluster_size $f_names_de --sizeout --threads $t --centroids $r_names --id $id`)
+        end 
+    else 
+        cluster = run(`vsearch --quiet --sizein --cluster_size $f_names_de --sizeout --threads $t --centroids $r_names --id $id`)
+    end 
     cluster = run(`vsearch --quiet --sortbysize $r_names  --output $best --topn 1`)
     out = ""
     FastaReader(best) do fr
         for (n, seq) in fr
-            out = String(seq)
+            out = split(String(n),";")[1]
         end
     end
     rm(tmpdir, recursive=true)
@@ -170,12 +190,25 @@ function julia_main()::Cint
     add_argument!(parser, "-2", "--input-fastq2", type = String, help = "Input reverese (R2) fastq")
     add_argument!(parser, "-a", "--clustering-r1", type = String, help = "A gjc of R1 file ")
     add_argument!(parser, "-b", "--clustering-r2", type = String, help = "A gjc of R2 file ")
-    add_argument!(parser, "-o", "--output-fasta", type = String, help = "Output file")
+    add_argument!(parser, "-o", "--output-fastq1", type = String, help = "Output file 4 R1")
+    add_argument!(parser, "-p", "--output-fastq2", type = String, help = "Output file 4 R2")
+    add_argument!(parser,"-s","--swarm", action = "store_true",help="Use swarm instead of vsearch for clustering")
+    add_argument!(parser, "-m", "--min-cluster-size", type = Int, default=1 , help = "Minimum cluster size")
     args = parse_args(parser)
+    r1_fastq = parse_fastq(args.input_fastq1)    
     r2_fastq = parse_fastq(args.input_fastq2)    
-    combined_clusters =  intersect_R1_R2_clusters(args.clustering_r1,args.clustering_r2)
-    new_centroids = run_clustering(r2_fastq, combined_clusters)
+    combined_clusters_ini =  intersect_R1_R2_clusters(args.clustering_r1,args.clustering_r2)
+    #filter based on size
+    combined_clusters = Array{Array{String,1},1}()
+    for c in combined_clusters_ini  
+        if length(c) >= args.min_cluster_size 
+            push!(combined_clusters,c)
+        end 
+    end 
+    println(stderr, "Number of cluster after size filtering ",length(combined_clusters))
+    new_centroids = run_clustering(r2_fastq, combined_clusters, swarm=args.swarm)
     println(stderr, "Number of new centroids: ",length(new_centroids))
+    write_out_fastq(r1_fastq, r2_fastq, new_centroids, args.output_fastq1, args.output_fastq2)        
     exit()
     seqs = parse_fastq(args.input_fastq)
     expected_clustering_filei1 = args.input_fasta*".gjc"  
