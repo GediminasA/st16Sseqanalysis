@@ -101,7 +101,12 @@ rule test_pardre_dedup:
         expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{tp}pardreD{d}_prefix{pref}_sample40000_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1"],
                d=[0,1,2,4,6,8,10],
                pref=[100,210,220,230,240,250,260,270,280],
-               tp=["","merged_","notmerged_"],
+               tp=["","merged_","notmerged_"])
+rule test_vsearch_paired:
+    input:
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{tp}_CclusterP99|clusterP98C_prefix{pref}_sample40000_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1"],
+               pref=[240],
+               tp=["all"],
                )
 rule standard:
     input:

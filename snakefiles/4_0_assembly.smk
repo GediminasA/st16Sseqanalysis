@@ -142,8 +142,8 @@ rule get_R12_q_ini:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
     output:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_all.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_all.fastq.gz",
     threads: 2
     shell:
         '''
@@ -153,8 +153,8 @@ rule get_R12_q_ini:
         '''
 rule merge_4dedup:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_all.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_all.fastq.gz",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
@@ -533,6 +533,23 @@ rule pardre:
         ./binaries/ParDRe -i {input[0]} -p {input[1]} -o {output[0]} -r {output[1]} -z -t {threads} -m {params.d} &> {log}
         '''
 
+def vsearch_paired_input(wildcards):
+    f1c,f2c=wildcards.stem3.split("|")
+    print(f1c,f2c)
+    f1=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini_{wildcards.stem2}_{f1c}.fasta"
+    f2=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini_{wildcards.stem2}_{f2c}.fasta"
+    return(f1,f2)
+
+rule vsearch_paired:
+    input:
+        vsearch_paired_input
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C.fastq.gz",
+    shell:
+        '''
+        singularity/julia.sif scripts/cluster_intersect.jl
+        '''
 
 
 rule match_pairs_ded:

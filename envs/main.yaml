@@ -21,4 +21,4 @@ dependencies:
   - swarm=3.0.0
   - vsearch=2.15.0
   - pip:
-    - colorama=0.4.3 
+    - colorama==0.4.3 
