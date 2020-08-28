@@ -38,6 +38,7 @@ rule subset:
        "{stem}_sample{d,[0-9]+}.fastq.gz"
     params:
         n =    "{d,[0-9]+}"
+    threads: 8
     shell:
         "seqkit sample -s 1 -o {output} -n {params.n} {input}"
 
@@ -548,7 +549,7 @@ rule vsearch_paired:
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
-    threads: 4
+    threads: 3
     shell:
         '''
         julia scripts/cluster_intersect.jl -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
@@ -560,7 +561,7 @@ rule vsearch_paired_sw:
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
-    threads: 4
+    threads: 3
     shell:
         '''
         julia scripts/cluster_intersect.jl -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
@@ -657,6 +658,7 @@ rule fqgz_to_fasta:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fastq.gz",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fasta",
+    threads: 8
     shell:
         "seqkit fq2fa -w0 {input} -o {output} "
 
