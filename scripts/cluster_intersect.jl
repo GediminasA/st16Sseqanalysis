@@ -6,7 +6,6 @@ using Base.Threads
 using ProgressMeter
 using Suppressor
 push!(LOAD_PATH, "scripts/julia_modules/ArgParse2.jl/src")
-println()
 using ArgParse2
 
 
