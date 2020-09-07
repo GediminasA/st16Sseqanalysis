@@ -7,6 +7,7 @@ using CodecZlib
 using BioAlignments
 using BGZFStreams
 using Statistics
+using XAM 
 
 function parse_commandline()
     s = ArgParseSettings()
