@@ -208,16 +208,6 @@ function julia_main()::Cint
     new_centroids = run_clustering(r2_fastq, combined_clusters, swarm=args.swarm)
     println(stderr, "Number of new centroids: ",length(new_centroids))
     write_out_fastq(r1_fastq, r2_fastq, new_centroids, args.output_fastq1, args.output_fastq2)        
-    exit()
-    seqs = parse_fastq(args.input_fastq)
-    expected_clustering_filei1 = args.input_fasta*".gjc"  
-
-    if isfile(expected_clustering_file)
-        println("Reading clustering from $expected_clustering_file")
-    else 
-        error("Expected clustering file $expected_clustering_file not found")
-    end 
-    write_out_fastq(seqs,mapping,args.output_fasta)
     return 0
 end
 
