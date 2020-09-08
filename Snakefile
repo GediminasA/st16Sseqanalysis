@@ -26,6 +26,7 @@ include: "./snakefiles/3_0_processing.smk"
 include: "./snakefiles/4_0_assembly.smk"
 include: "./snakefiles/4_1_methagenome.smk"
 include: "./snakefiles/4_2_prepare_reads.smk"
+include: "./snakefiles/4_2.2_deduplicate_reads.smk"
 include: "./snakefiles/4_3_sanitise_contigs.smk"
 include: "./snakefiles/4_4_sanitise_contigs_clusters.smk"
 include: "./snakefiles/5_0_qc.smk"
@@ -55,7 +56,7 @@ rule all:
         #OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
-        #OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
+        OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
         #OUT + "/picard_all_report.html",
         #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
@@ -111,6 +112,16 @@ rule test_vsearch_paired:
                cl2=["clusterP94","clusterP96","clusterP97","clusterP98","clusterP99","clusterP100","clusterL94","clusterL96","clusterL97","clusterL98","clusterL99","clusterL100","swarmD1","swarmD2"],
                mr=[1,2],
                m=["V","S"]
+               )
+rule test_vsearch_best:
+    input:
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{tp}_C{cl1}X{cl2}C{mr}MN{m}_prefix{pref}_sample40000_blast_summary_genus.tsv", stem=STEMS,
+               pref=[240],
+               tp=["notmerged"],
+               cl1=["swarmD1"],
+               cl2=["clusterL100"],
+               mr=[1],
+               m=["V"]
                )
 rule standard:
     input:

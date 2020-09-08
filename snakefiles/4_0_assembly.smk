@@ -549,10 +549,12 @@ rule vsearch_paired:
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNV.fastq.gz",
+    params:
+        minclsize="{stem4}"
     threads: 3
     shell:
         '''
-        julia scripts/cluster_intersect.jl -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
+        julia scripts/cluster_intersect.jl -m {params.minclsize} -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
         '''
 
 rule vsearch_paired_sw:
@@ -561,10 +563,12 @@ rule vsearch_paired_sw:
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_{stem2}_C{stem3}C{stem4}MNS.fastq.gz",
+    params:
+        minclsize="{stem4}"
     threads: 3
     shell:
         '''
-        julia scripts/cluster_intersect.jl -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
+        julia scripts/cluster_intersect.jl -m {params.minclsize} -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
         '''
 
 
