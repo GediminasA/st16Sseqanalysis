@@ -120,9 +120,15 @@ rule test_vsearch_best:
                tp=["notmerged"],
                cl1=["swarmD1"],
                cl2=["clusterL100"],
-               mr=[1],
-               m=["V"]
+               mr=[1,2],
+               m=["V","S"]
                )
+
+rule test_dedup_final:
+    input:
+       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_dedup_{tp}.fastq.gz",stem=STEMS,r=["R1","R2"],tp=["mergd","notmergd","all"])
+
+
 rule standard:
     input:
         OUT + "/INSERT_SIZE/all.csv",

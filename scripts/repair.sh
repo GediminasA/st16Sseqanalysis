@@ -41,7 +41,9 @@ then
 else 
         mv  $fqi1uz.paired.fq  $fqo1 & 
 fi 
-if [ ${fqo2: -2} == "gz" ] 
+echo AAAAAAAAAAAAAAAa $fqo2
+
+if [ ${fqo2:(-2)} == "gz" ] 
 then 
         gzip -c $fqi2uz.paired.fq > $fqo2 & 
 else 
