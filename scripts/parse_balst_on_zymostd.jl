@@ -10,7 +10,11 @@ blast_fields = "qseqid sseqid pident length mismatch gapopen qstart qend sstart 
 dada_fields = "Contig Kingdom Phylum Class Order Family Genus"
 df = CSV.read(blastfile,header = Array{String,1}(split(blast_fields)))
 df2 = CSV.read(dadatax,header = Array{String,1}(split(dada_fields)), skipto = 2)
+#ensure that contig names are strings
+df.qseqid = string.(df.qseqid)
+df2.Contig = string.(df2.Contig)
 tt = getindex.(split.(df2.Contig," "),1)
+
 df2.Contig = tt 
 contig_genus_map = Dict{String,String}()
 contigs = collect(df2.Contig)
