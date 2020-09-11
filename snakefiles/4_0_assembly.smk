@@ -31,7 +31,7 @@ rule get_prefix:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
-rule subset:
+rule subsetFQ:
     input:
         "{stem}.fastq.gz"
     output:
@@ -42,13 +42,34 @@ rule subset:
     shell:
         "seqkit sample -s 1 -o {output} -n {params.n} {input}"
 
-rule filter_sizefastq:
+rule subsetFA:
+    input:
+        "{stem}.fasta"
+    output:
+       "{stem}_samplefa{d,[0-9]+}.fasta"
+    params:
+        n =    "{d,[0-9]+}"
+    threads: 8
+    shell:
+        "seqkit sample -s 1 -o {output} -n {params.n} {input}"
+
+rule filter_minlength4fastq:
     input:
         tmp + "/{stem}.fastq.gz"
     output:
-        tmp + "/{stem}_minsize{stem4}.fastq.gz"
+        tmp + "/{stem}_minlengthfq{stem4,[0-9]+}.fastq.gz"
     params:
-        min_length = "{stem4}",
+        min_length = "{stem4,[0-9]+}",
+    shell:
+        "seqkit seq -m {params.min_length}  {input} -o {output}"
+
+rule filter_minlength4fasta:
+    input:
+        tmp + "/{stem}.fasta"
+    output:
+        tmp + "/{stem}_minlengthfa{stem4,[0-9]+}.fasta"
+    params:
+        min_length = "{stem4,[0-9]+}",
     shell:
         "seqkit seq -m {params.min_length}  {input} -o {output}"
 
@@ -209,11 +230,20 @@ rule join_clustering2:
     fuse.sh threads={threads} in={input[0]} in2={input[1]} out={output} {params.add}
     '''
 
-rule fqgz_to_fasta:
+rule fqgz_to_fasta4tmp:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fastq.gz",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fasta",
+    threads: 8
+    shell:
+        "seqkit fq2fa -w0 {input} -o {output} "
+
+rule fqgz_to_fasta4out:
+    input:
+        OUT + "/16S_having_reads/{stem}.fastq.gz",
+    output:
+        OUT + "/16S_having_reads/{stem}.fasta",
     threads: 8
     shell:
         "seqkit fq2fa -w0 {input} -o {output} "
@@ -587,7 +617,7 @@ rule remove_s_with_N2:
     input:
         "{stem}.fastq.gz"
     output:
-        "{stem}_woN.fastq.gz"
+        "{stem}_woNfq.fastq.gz"
     shell:
         "bbduk.sh in={input} out={output} maxns=0  "
 

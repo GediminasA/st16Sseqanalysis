@@ -47,9 +47,9 @@ localrules: filterout_r1primer_sequence_having_reads_on16S
 
 rule all:
     input:
-        #OUT + "/INSERT_SIZE/all.csv",
+        OUT + "/INSERT_SIZE/all.csv",
         #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
-        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon2.csv",stem=STEMS),
@@ -74,14 +74,13 @@ rule all:
 
 rule retest_simple_clustering:
     input:
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_prefix{pref}_sample40000_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[100,210,220,230,240,250,260,270,280]),
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_prefix{pref}_sample40000_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[100,210,220,230,240,250,260,270,280]),
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_prefix{pref}_sample40000_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[100,210,220,230,240,250,260,270,280])
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_all_prefix{pref}_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[240,280]),
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_prefix{pref}_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[240,280]),
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_prefix{pref}_woident_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"], pref=[240,280])
 
 rule retest_swarm:
     input:
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_woN_sample40000_woident_swarmD1_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"]),
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_woN_sample40000_woident_swarmD2_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"])
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_sample{samp}_woident_woN_swarmD1_blast_summary_genus.tsv", stem=["Zymo1-2X-65C_S6","Geordi-Zymo-even-1","Geordi-Zymo-even-2"],samp=[40000,60000,80000,100000,100000,200000,300000]),
 
 rule retest_swarm_more_perm_merge:
     input:
@@ -126,7 +125,12 @@ rule test_vsearch_best:
 
 rule test_dedup_final:
     input:
-       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_dedup_{tp}.fastq.gz",stem=STEMS,r=["R1","R2"],tp=["mergd","notmergd","all"])
+       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["mergd","notmergd","all"]),
+       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["prededup"],tp=["mergd","notmergd","all"])
+
+rule test_r2_gc:
+    input:
+        OUT + "/picard_gcVSins_report.html",
 
 
 rule standard:

@@ -80,9 +80,11 @@ end
 # Filter out BA reads by tlen - return matching names
 function filter_by_tlen(bam_name::String, minl::Int64, maxl::Int64;min_aln_frac::Float64=0.96)
     name_coord = Dict{String,Array{Int64,1}}()
+    r2records = Dict{String,XAM.BAM.Record}() #bad...memory ineficient, but.....not critical
     reader = open(BAM.Reader,bam_name)
     chosen_ids = Array{String,1}()
-    for record in reader 
+    println(stderr,"Parssing started...")
+    for record in reader
         if BAM.ismapped(record) && BAM.isprimary(record)
 	    tempname = BAM.tempname(record)
             if !haskey(name_coord,tempname)
@@ -94,10 +96,14 @@ function filter_by_tlen(bam_name::String, minl::Int64, maxl::Int64;min_aln_frac:
                 s = first(aln.anchors).refpos
                 e = last(aln.anchors).refpos 
                 tlen = abs(BAM.templength(record))
+
                 if aligned_fraction(record) >= min_aln_frac  
                     push!(name_coord[tempname],s)
                     push!(name_coord[tempname],e)
                 end 
+            end 
+            if flag&128==128 && BAM.ismapped(record) && BAM.isprimary(record)
+                r2records[tempname] = record
             end 
         end 
     end
@@ -110,31 +116,22 @@ function filter_by_tlen(bam_name::String, minl::Int64, maxl::Int64;min_aln_frac:
                 push!(chosen_ids,tn)
             end 
         end 
-    end 
-    return(unique(chosen_ids))
+    end
+    println(stderr,"Parsed all reads and filtered by length")
+    return(unique(chosen_ids),r2records)
 end 
 
 #extract the bam records matching ids
 
-function write_out_bam(inbam::String, names::Array{String,1},outbam::String)
+function write_out_bam(inbam::String, names::Array{String,1},outbam::String,r2records::Dict{String,XAM.BAM.Record})
     reader = open(BAM.Reader,inbam)
     h = BAM.header(reader)
     outfb = open(outbam, "w")
     outfbgz = BGZFStream( outfb,"w")
     bamw = BAM.Writer(outfbgz, h)
-
-    for record in reader 
-        if BAM.ismapped(record) && BAM.isprimary(record)
-            flag = BAM.flag(record)
-	    tempname = BAM.tempname(record)
-            if tempname in names && flag&128==128 
-                if tempname in names 
-                    println(tempname)
-                    write(bamw,record)
-                end 
-            end 
-        end 
-    end
+    for tempname in names  
+        write(bamw,r2records[tempname])
+    end 
     close(outfbgz)
     close(outfb)
 end
@@ -144,8 +141,8 @@ function main()
     
     #reader = open(BAM.Reader,parsed_args["inbam"])#,index = parsed_args["inbam"]*".bai")
     #h = BAM.header(reader)
-    chosen_names = filter_by_tlen(parsed_args["inbam"],parsed_args["min-size"],parsed_args["max-size"])
-    write_out_bam(parsed_args["inbam"],chosen_names, parsed_args["outbam"])
+    chosen_names, r2records = filter_by_tlen(parsed_args["inbam"],parsed_args["min-size"],parsed_args["max-size"])
+    write_out_bam(parsed_args["inbam"],chosen_names, parsed_args["outbam"],r2records)
     #write out names
     fn = open(parsed_args["outnames"],"w")
     for n in chosen_names

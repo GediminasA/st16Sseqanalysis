@@ -54,8 +54,8 @@ def vsearch_paired_input(wildcards):
     print(f1c,f2c)
     f1=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini_{wildcards.stem2}_woident_{f1c}.fasta"
     f2=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini_{wildcards.stem2}_woident_{f2c}.fasta"
-    f3=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini.fastq.gz"
-    f4=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini.fastq.gz"
+    f3=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R1_001_ini_{wildcards.stem2}.fastq.gz"
+    f4=f"{tmp}/16S_amplicons/ClusterBasedDedup/{wildcards.stem}_L001_R2_001_ini_{wildcards.stem2}.fastq.gz"
     return(f1,f2,f3,f4)
 
 rule vsearch_paired:
@@ -113,7 +113,7 @@ rule join_clustering:
 
 rule get_merged_dedup:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_woN_sample40000_woident_swarmD1.fasta.nameswos",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woident_woN_swarmD1.fasta.nameswos",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
     output:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_mergd.fastq.gz",
@@ -124,9 +124,22 @@ rule get_merged_dedup:
         seqkit grep --delete-matched -j {threads}  -f {input[0]} {input[1]}   -o  {output[0]}
         seqkit seq --reverse --complement -o {output[1]} {output[0]}
         '''
+rule get_merged_prededup:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woN.fasta.nameswos",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_mergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_mergd.fastq.gz",
+    threads: 4
+    shell:
+        '''
+        seqkit grep --delete-matched -j {threads}  -f {input[0]} {input[1]}   -o  {output[0]}
+        seqkit seq --reverse --complement -o {output[1]} {output[0]}
+        '''
 rule get_unmerged_dedup:
     input:
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_CswarmD1XclusterL100C1MNV_minsize240.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_CswarmD1XclusterL100C1MNV_minlengthfq240.fastq.gz",
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged_CswarmD1XclusterL100C1MNV.fastq.gz",
     output:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_notmergd.fastq.gz",
@@ -135,6 +148,18 @@ rule get_unmerged_dedup:
         '''
         scripts/repair.sh in1={input[0]} out1={output[0]} in2={input[1]} out2={output[1]}
         '''
+rule get_unmerged_prededup:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged_minlengthfq240.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_notmergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_notmergd.fastq.gz",
+    shell:
+        '''
+        scripts/repair.sh in1={input[0]} out1={output[0]} in2={input[1]} out2={output[1]}
+        '''
+
 rule get_all_dedup:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_mergd.fastq.gz",
@@ -149,3 +174,71 @@ rule get_all_dedup:
         cat  {input[0]} {input[2]} > {output[0]} ;
         cat  {input[1]} {input[3]} > {output[1]} ;
         '''
+
+rule get_all_prededup:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_mergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_mergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_notmergd.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_notmergd.fastq.gz",
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_all.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_all.fastq.gz",
+    shell:
+        '''
+        cat  {input[0]} {input[2]} > {output[0]} ;
+        cat  {input[1]} {input[3]} > {output[1]} ;
+        '''
+
+#CHECK deduplication
+
+rule map_prededup_reads_on_ref:
+    input:
+        CONFIG["ref4picard"],
+        CONFIG["ref4picard"] + ".rev.2.bt2",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_all.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_all.fastq.gz",
+    output:
+        tmp + "/QC/{stem}_prededup.bam"
+    threads: CONFIG["MACHINE"]["threads_bwa"]
+    shell:'''
+    bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort  > {output}
+    '''
+
+rule map_dedup_reads_on_ref:
+    input:
+        CONFIG["ref4picard"],
+        CONFIG["ref4picard"] + ".rev.2.bt2",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_all.fastq.gz",
+    output:
+        tmp + "/QC/{stem}_dedup.bam"
+    threads: CONFIG["MACHINE"]["threads_bwa"]
+    shell:'''
+    bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort  > {output}
+    '''
+
+rule extract_R2_4insertsize:
+    input:
+        "{stem}.bam",
+    output:
+        "{stem}_I{stem2,[0-9]+}-{stem3,[0-9]+}_R2.bam",
+        "{stem}_I{stem2,[0-9]+}-{stem3,[0-9]+}_R2.bnames",
+    params:
+        min_length = "{stem2,[0-9]+}",
+        max_length = "{stem3,[0-9]+}",
+    shell:
+        '''
+
+        julia scripts/extract_R2_by_insert.jl \
+        -i {input} \
+        -m {params.min_length} \
+        -M {params.max_length} \
+        -o {output[1]} \
+        -b {output[0]} \
+
+        '''
+
+
+
+

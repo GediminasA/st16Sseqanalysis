@@ -8,15 +8,15 @@
 # Some parameters might be or might become  obolete. Sorry! #
 #############################################################
 
-SAMPLES:   Zymo1-2X-65C_S6  Zymo1sim-2X-65C_S6 Geordi-Zymo-even-1 Geordi-Zymo-even-2 #Zymo1-2X-55C_S2 
+SAMPLES:   Zymo1-2X-65C_S6 Geordi-Zymo-even-1 Geordi-Zymo-even-2 #Zymo1-2X-55C_S2 
 INPUT-DIR:  /media/root/ngs_nas3/2020_06_29_Geordi_standartai 
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
-TMP-DIR: 0817/tmp
-OUT-DIR: 0817/out 
-SCRATCH: 0817/tmp
-BENCH-DIR:  0817/bench 
-BENCHMARKS:  0817/benchmarks 
+TMP-DIR: 0817sub/tmp
+OUT-DIR: 0817sub/out 
+SCRATCH: 0817sub/tmp
+BENCH-DIR:  0817sub/bench 
+BENCHMARKS:  0817sub/benchmarks 
 
 #############################
 # Primer sequences fltering #
@@ -107,7 +107,7 @@ BBDUK:
 ###############
 SUBSAMPLING:
     threads: 4
-    run: False
+    run: True
     subsample_to:
 
 ###############
