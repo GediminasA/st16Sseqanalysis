@@ -194,8 +194,8 @@ rule get_all_prededup:
 
 rule map_prededup_reads_on_ref:
     input:
-        CONFIG["ref4picard"],
-        CONFIG["ref4picard"] + ".rev.2.bt2",
+        CONFIG["ref"],
+        CONFIG["ref"] + ".rev.2.bt2",
         OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_all.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_all.fastq.gz",
     output:
@@ -207,8 +207,8 @@ rule map_prededup_reads_on_ref:
 
 rule map_dedup_reads_on_ref:
     input:
-        CONFIG["ref4picard"],
-        CONFIG["ref4picard"] + ".rev.2.bt2",
+        CONFIG["ref"],
+        CONFIG["ref"] + ".rev.2.bt2",
         OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_all.fastq.gz",
     output:
@@ -224,6 +224,7 @@ rule extract_R2_4insertsize:
     output:
         "{stem}_I{stem2,[0-9]+}-{stem3,[0-9]+}_R2.bam",
         "{stem}_I{stem2,[0-9]+}-{stem3,[0-9]+}_R2.bnames",
+        "{stem}_I{stem2,[0-9]+}-{stem3,[0-9]+}_R2.chimeras_rate.txt",
     params:
         min_length = "{stem2,[0-9]+}",
         max_length = "{stem3,[0-9]+}",
@@ -236,6 +237,7 @@ rule extract_R2_4insertsize:
         -M {params.max_length} \
         -o {output[1]} \
         -b {output[0]} \
+        -r {output[2]} \
 
         '''
 

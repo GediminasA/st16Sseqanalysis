@@ -132,6 +132,9 @@ rule test_r2_gc:
     input:
         OUT + "/picard_gcVSins_report.html",
 
+rule test_chimeras:
+    input:
+        expand(tmp + "/QC/{stem}_{tp}_I{intv}_R2.chimeras_rate.txt", stem=STEMS,intv=["0-1500","400-600","700-1500",],tp=["dedup","prededup"]),
 
 rule standard:
     input:
