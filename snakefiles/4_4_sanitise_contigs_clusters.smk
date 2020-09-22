@@ -20,7 +20,7 @@ rule filter_bySize_and_cut:
 rule get_final_contigs:
     input:
         #tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef_woN_woident_swarmD2_clusterL97.fasta"
-        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_sizef_woN_woident_swarmD2_clusterL97.fasta"
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged_woN_woident_swarmD2_clusterL97.fasta"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta"
     params:
@@ -28,14 +28,22 @@ rule get_final_contigs:
     shell:
         "rename.sh addprefix=t  in={input} out={output} prefix='{params.prefix}' "
 
-rule get_250_prefix:
+rule get_230_prefix:
     input:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_250bp.fasta"
     shell:
         '''
-        seqkit subseq -w 0 -r 1:230 {input} >  {output}
+        set +e
+        seqkit subseq -w 0 -r 1:230 {input} -o   {output}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
 
         '''
 
@@ -50,13 +58,22 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
         names = tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.names"
     shell:
         '''
+        set +e
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
         singularity/julia.sif scripts/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
         seqkit grep -r -f {params.names} {input[1]} > {output[0]}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
+
 
         '''
 
-
+# mapping on reference
 rule map_centroid_on_ref:
     input:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta"
@@ -69,6 +86,29 @@ rule map_centroid_on_ref:
     shell:
         "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
 
+rule map_centroid_on_ref_r1:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_fqnotgz2fa_clusterL99.fasta",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_R1_onref.bam"
+    params:
+        ref = CONFIG["ref"]
+    threads:
+        CONFIG["MACHINE"]["threads_bwa"]
+    shell:
+        "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
+
+rule map_centroid_on_ref_r2:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed_fqnotgz2fa_clusterL99.fasta"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_R2_onref.bam"
+    params:
+        ref = CONFIG["ref"]
+    threads:
+        CONFIG["MACHINE"]["threads_bwa"]
+    shell:
+        "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
 
 rule analyse_centroids_on_reference:
     input:

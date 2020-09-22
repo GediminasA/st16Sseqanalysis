@@ -58,6 +58,7 @@ println("Readed in maping for $nb_of_cl number of clusters")
 println("File names for clusters will be writen out to the directory $outdir")
 ct = 0
 finfo = open("$outdir/cluster_genus_size.csv","w")
+finfo2 = open("$outdir/skipped_clusters.txt","w")
 println(finfo,"Cluster;Genus;Size")
 for genusinf in centroid_genus_map_array
     ct += 1
@@ -77,9 +78,10 @@ for genusinf in centroid_genus_map_array
         close(f)
         println(finfo,"$ct;$gn;$size")
     else
-        println("Skiping cluster $ct $gn as too small size less than $minimumclustersize fraction")
+        println(finfo2,"Skiping cluster $ct $gn as too small size less than $minimumclustersize fraction")
     end
 end
 close(finfo)
+close(finfo2)
 end
 go()

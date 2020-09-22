@@ -119,7 +119,7 @@ DNA_GC:
 KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
 BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
 #DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
-DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v138_train_set.fa.gz
+DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz 
 #misc
 dt: r1 
 r1c: minsize1

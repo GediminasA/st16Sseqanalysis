@@ -96,7 +96,7 @@ rule get_bothr2:
 
 rule get_repaired:
     input:
-        tmp + "/16S_having_reads/{stem}_L001_R1_001_corrected_merwun.fastq.gz",
+        tmp + "/16S_having_reads/{stem}_L001_R1_001_corrected_merwun_minlengthfq240.fastq.gz",
         tmp + "/16S_having_reads/{stem}_L001_R2_001_corrected_merwun.fastq.gz",
     output:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",

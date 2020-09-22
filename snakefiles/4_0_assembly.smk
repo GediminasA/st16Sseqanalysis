@@ -31,6 +31,23 @@ rule get_prefix:
                 " overwrite=t " +
                 "-Xmx{params.m}g "
 
+rule get_prefixfa:
+    input:
+       "{stem}.fasta"
+    output:
+       "{stem}_prefixf{d,[0-9]+}.fasta"
+    params:
+        n =    "{d,[0-9]+}",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        " ftrl=$(({params.n}-1))  ; bbduk.sh in={input[0]} out={output[0]} " +
+                " threads={threads} " +
+                " minlength={params.n} " +
+                " ftr=$ftrl maxns=0 " +
+                " overwrite=t " +
+                "-Xmx{params.m}g "
 rule subsetFQ:
     input:
         "{stem}.fastq.gz"
@@ -73,7 +90,7 @@ rule filter_minlength4fasta:
     shell:
         "seqkit seq -m {params.min_length}  {input} -o {output}"
 
-rule cut_first_250_bp:
+rule copy_4_clustering:
     input:
        #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
        #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
@@ -83,23 +100,9 @@ rule cut_first_250_bp:
        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp.fastq.gz",
-    params:
-        add =    "  ftr=239 maxns=0 ",
-        m =         MEMORY_JAVA
-    threads:
-        CONFIG["BBDUK"]["threads"]
-    benchmark:
-        BENCHMARKS + "/trimming_{stem}.log"
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1.fastq.gz",
     shell:
-        "bbduk.sh in={input[0]} out={output[1]} " +
-                " threads={threads} " +
-                " minlength=240 " +
-                " {params.add} " +
-                " overwrite=t " +
-                "-Xmx{params.m}g " +
-                " ; seqkit fq2fa {output[1]} > {output[0]} "
+        "cp {input} {output}"
 
 rule part:
         input:
@@ -136,7 +139,7 @@ rule get_testing_file:
 
 rule cp_contigs4test:
     input:
-        "datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
+        "/mnt/beegfs/Databases/BACTERIA/ATTC/final/attc_16S1500bp_final_wog.fasta"
     output:
         "testing/contigs4test.fasta"
     shell:
@@ -361,9 +364,9 @@ rule getR2_revc:
 
 checkpoint group_reads_by_first250bp:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoiseM1_swarmD1.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD1.fasta",
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoiseM1_swarmD1_dada2classify.csv",
+        tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD1_dada2classify.csv",
     output:
         directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
         tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
@@ -460,6 +463,8 @@ rule merge_clustered_reads:
 
 
 
+
+
 def aggregate_ref_cleaned1(wildcards):
     '''
     aggregate the file names of the random number of files
@@ -469,6 +474,26 @@ def aggregate_ref_cleaned1(wildcards):
     sample = wildcards.stem
     return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1.fasta" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
+def aggregate_ref_cleaned1_aligned(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_onref.bam" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
+def aggregate_ref_uniquereads_aligned(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_{r}_onref.bam{i}" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i,r=["R2","R1"],i=["",".bai"])  #_sizef_clusterP97.fasta",
 
 def aggregate_ref_cleaned_reads(wildcards):
     '''
@@ -508,6 +533,24 @@ rule collect_output:
     shell:'''
     cat {output}
 '''
+
+rule  get_quality_assemblies:
+    input:
+        aggregate_ref_cleaned1_aligned,
+        aggregate_ref_uniquereads_aligned,
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cluster_genus_size.csv"
+    params:
+        dir = OUT + "/COMPARE_VS_REF/CLUSTERS/{stem}"
+
+    output:
+        OUT + "/COMPARE_VS_REF/CLUSTERS/{stem}/cluster_genus_size.csv"
+    shell:
+        '''
+        for f in  {input}
+        do
+        cp   $f {params.dir}
+        done
+        '''
 
 
 
@@ -803,11 +846,20 @@ rule cluster_with_unoise:
 
 rule fastq_to_fasta:
     input:
+        "{stem}.fastq"
+    output:
+        "{stem}_fqnotgz2fa.fasta"
+    shell:
+        "seqkit fq2fa {input} -o {output}"
+
+rule fastqgz_to_fasta:
+    input:
         "{stem}.fastq.gz"
     output:
         "{stem}_fq2fa.fasta"
     shell:
         "seqkit fq2fa {input} -o {output}"
+
 
 rule merge_16S_reads:
     input:

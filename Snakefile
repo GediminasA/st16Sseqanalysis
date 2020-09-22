@@ -123,6 +123,7 @@ rule test_vsearch_best:
                m=["V","S"]
                )
 
+
 rule test_dedup_final:
     input:
        expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["mergd","notmergd","all"]),
@@ -135,6 +136,48 @@ rule test_r2_gc:
 rule test_chimeras:
     input:
         expand(tmp + "/QC/{stem}_{tp}_I{intv}_R2.chimeras_rate.txt", stem=STEMS,intv=["0-1500","400-600","700-1500",],tp=["dedup","prededup"]),
+
+rule test_assebly_fitness:
+    input:
+        expand(OUT + "/COMPARE_VS_REF/CLUSTERS/{stem}/cluster_genus_size.csv", stem=STEMS)
+
+rule cp4_assembly4_test:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+    output:
+        "ASSMBLIES/{pref}@{stem}.fasta"
+    shell:
+        "cp {input} {output}"
+rule test_assembly:
+    input:
+        expand("ASSMBLIES/standard@{stem}.fasta",stem=STEMS)
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem = STEMS)
+
+rule retest_clustering4assembly:
+    input:
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_all_prefix{pref}_woident_{method}_blast_summary_genus.tsv",
+               stem=STEMS,
+               pref=[240],
+               #method=["swarmD1","swarmD2","unoiseM1","unoiseM2","clusterP99","clusterP98","clusterP97","woident","unoiseM1_swarmD2","unoiseM1_swarmD1","unoiseM2_swarmD2","unoiseM2_swarmD1","minsize2_swarmD1","minsize3_swarmD2"],
+               #best
+               method=["swarmD1","unoiseM1_swarmD1"],
+               ),
+
+
+rule cp4_test_class:
+    input:
+        "datasets/testingdata/expected_contigs/zymo_expected_contigs.fa"
+    output:
+        "play/zymo_expected_contigs.fasta"
+    shell:
+        "cp {input} {output} "
+
+rule test_class:
+    input:
+        "kosa_blast_summary_genus.tsv",
+        "coli_blast_summary_genus.tsv",
+
+
 
 rule standard:
     input:
