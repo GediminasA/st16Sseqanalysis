@@ -13,7 +13,7 @@ function main()
     add_argument!(parser, "--reference-values","-r", help = "Reference values",type = String)
     add_argument!(parser,"--read-counts","-c", metavar="COUNTS", nargs = "+", required = true)
     args = parse_args(parser)
-    ref_data = CSV.read(args.reference_values)
+    ref_data =  DataFrame!(CSV.File(args.reference_values))
     println("File CorvsMaximumcluster CorvsTotal CorvsNumberOfClusters NumberOfClusters DetectedReqGenus")
     ct = 0
     cor1 = 0 
@@ -21,10 +21,10 @@ function main()
     cor3 = 0 
     for cntf in args.read_counts        
         ct += 1
-        print(stderr,ct," ",cntf,"\n") 
-        counts = DataFrame(CSV.read(cntf)) 
+        counts = DataFrame!(CSV.File(cntf)) 
         counts = @transform( counts, Genus2 = getindex.(split.(:Genus,"/"),1) )
-        counts = @transform( counts, Genus2 = getindex.(split.(:Genus,"-"),1) )
+        counts = @transform( counts, Genus2 = getindex.(split.(:Genus2,"-"),1) )
+        counts = @transform( counts, Genus2 = getindex.(split.(:Genus2),1) )
         counts1 = @select(counts, :Genus2, :Maximum_abundance)
         counts2 = @select(counts, :Genus2, :Total_abundance)
         counts3 = @select(counts, :Genus2, :Number_of_sequences)
