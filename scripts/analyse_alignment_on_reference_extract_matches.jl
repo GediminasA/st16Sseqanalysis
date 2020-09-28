@@ -144,10 +144,12 @@ function main()
     add_argument!(parser, "--ref","-r", help = "Reference",type = String)
     add_argument!(parser, "--contig","-c", help = "Contig",type = String)
     add_argument!(parser, "--genus","-g", help = "Genus",type = String)
+    add_argument!(parser, "--contig-fraction","-f", help = "Fraction of a contig that should be aligned",type = Float64,default = 0.7)
+    add_argument!(parser, "--contig-identity","-d", help = "Minimum identity of an aligned contig",type = Float64,default = 0.7)
     args = parse_args(parser)
     #Not command line parameters
-    min_al_idfrac = 0.7 # length of contig aligned
-    min_al_lenfrac = 0.7 # identity fraction
+    min_al_idfrac = args.contig_identity # length of contig aligned
+    min_al_lenfrac = args.contig_fraction  # identity fraction
     write_ref_seq = false # write matching reference sequence instead of a contig - for testing
     
     #dat of all matches on reference will be collected for filtering
@@ -217,14 +219,15 @@ function main()
     end
     close(reader)
     matches_expected = @where(matches, :Expected_genus .== 1)
-    CSV.write(args.output*".info.csv", matches,delim='\t')
     ref_c_ds = groupby(matches_expected,:Ref_ID)
     lens =Array{Int64,1}()
+    chosen_ids = Array{String,1}()
     for ref_c_d in ref_c_ds
 	df = DataFrame(ref_c_d)
-	df = @where(df,:Coverage_contig .>= min_al_idfrac, :Identity .>= min_al_idfrac)
+	df = @where(df,:Coverage_contig .>= min_al_lenfrac, :Identity .>= min_al_idfrac)
 	df = sort(df, :Match_length,rev=true)
 	s = df[1,:]
+	push!(chosen_ids, s.Contig_ID)
 	if write_ref_seq
 	    out_seqs[s.Contig_ID] = ref[s.Ref_ID][s.Ref_start:s.Ref_end]
 	else
@@ -233,6 +236,12 @@ function main()
 	push!(lens,length(testseqs[s.Contig_ID]))
     end
     fasta_from_dict(args.output,out_seqs)#,cut_end = minimum(lens))
+    Proper = Array{Bool,1}()
+    for i in matches.Contig_ID 
+	push!(Proper,(i in chosen_ids))
+    end 
+    matches.Proper = Proper 
+    CSV.write(args.output*".info.csv", matches,delim=';')
 end
 
 main()

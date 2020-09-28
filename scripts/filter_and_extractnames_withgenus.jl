@@ -10,6 +10,8 @@ centroid_genus_map = OrderedDict{String,Array{Any,1}}()
 ct = 0
 nact = 0
 totalnr = 0
+genuses = Set{String}()
+genuses_counts = Dict{String,Int64}()
 for l in readlines(f3)
     ct += 1
     if ct > 1
@@ -20,7 +22,16 @@ for l in readlines(f3)
         gn = parts[7]
         if gn == "NA"
             nact += 1
-            gn = "$gn$nact"
+            gn = "$gn"*"_"*"$nact"
+        else 
+            if gn in genuses 
+                genuses_counts[gn] += 1
+            else 
+                push!(genuses,gn)
+                genuses_counts[gn] = 1
+            end 
+            gnnr = genuses_counts[gn]
+            gn = "$gn"*"_"*"$gnnr"
         end
         if !(gn in keys(centroid_genus_map))
             centroid_genus_map[gn] = [Array{String,1}(),0]

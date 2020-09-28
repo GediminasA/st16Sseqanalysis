@@ -150,8 +150,11 @@ rule cp4_assembly4_test:
         "cp {input} {output}"
 rule test_assembly:
     input:
-        expand("ASSMBLIES/standard@{stem}.fasta",stem=STEMS)
+        expand("ASSMBLIES/attc1@{stem}.fasta",stem=STEMS)
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem = STEMS)
+rule get_contigd_after_cleaning:
+    input:
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta", stem = STEMS)
 
 rule retest_clustering4assembly:
     input:

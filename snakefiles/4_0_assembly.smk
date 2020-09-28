@@ -384,12 +384,8 @@ checkpoint group_reads_by_first250bp:
 
 checkpoint group_reads_by_first250bpdev:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bpdev_woident_clusterL99_swarmD1_blast_summary_genus.tsv",
-    output:
-        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_cluster_quant.csv",
-    shell:'''
-         cp {input} {output}
-         '''
+        expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_{method}_blast_summary_genus.tsv",stem=STEMS,
+               method=[ "woident_swarmD1" , "woident_swarmD2", "unoiseM1_swarmD1", "unoiseM1_swarmD2","woident_unoiseM1_swarmD1", "woident_unoiseM1_swarmD2"  ])
 
 rule get_R1_of_clusters:
     input:
