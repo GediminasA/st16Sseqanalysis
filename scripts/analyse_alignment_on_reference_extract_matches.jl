@@ -17,7 +17,7 @@ function parse_genus_info(inf::String)
     out = Dict{String,String}()
     df = DataFrame(CSV.read(inf))
     for r in eachrow(df)
-	out[string(r.Cluster)] = split(r.Genus,"-")[1]
+	out[string(r.Cluster)] = split(split(r.Genus,"-")[1],"_")[1]
     end
     return(out)
 end

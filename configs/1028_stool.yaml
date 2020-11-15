@@ -1,0 +1,127 @@
+###########################################################################
+# Program assembled 16S fragment+proximal genomic region and analyse them #
+###########################################################################
+
+
+#############################################################
+# The workflow is under intensive development               #     
+# Some parameters might be or might become  obolete. Sorry! #
+#############################################################
+
+SAMPLES:   Geordi-10-2_S17 Geordi-11-1_S18 Geordi-11-2_S19 Geordi-1-1_S1 Geordi-12-1_S20 Geordi-12-2_S21 Geordi-1-2_S2 Geordi-2-1_S3 Geordi-2-2_S4 Geordi-3-1_S5 Geordi-4-1_S6 Geordi-4-2_S7 Geordi-5-1_S8 Geordi-5-2_S9 Geordi-6-1_S10 Geordi-6-2_S11 Geordi-7-1_S12 Geordi-7-2_S13 Geordi-8-1_S14 Geordi-8-2_S15 Geordi-9-2_S16 Undetermined_S0 WGS-10_S31 WGS-11_S32 WGS-12_S33 WGS-1_S22 WGS-2_S23 WGS-3_S24 WGS-4_S25 WGS-5_S26 WGS-6_S27 WGS-7_S28 WGS-8_S29 WGS-9_S30 
+INPUT-DIR:  /media/root/ngs_nas3/2020_08_10_Geordi_stool 
+UMI_SAMPLES:  "S9000"
+LANE-REGEX: "L\\d\\d\\d_"
+TMP-DIR: 1028_quality/tmp
+OUT-DIR: 1028_quality/out 
+SCRATCH: 1028_quality/tmp
+BENCH-DIR:  1028_quality/bench 
+BENCHMARKS:  1028_quality/benchmarks 
+
+#############################
+# Primer sequences fltering #
+#############################
+PRIMERS:
+    R1: datasets/bbmap/R1_v3.fasta #sequences that must occure in R1
+    R1_4trim: datasets/bbmap/R1_v3_4trim.fasta #sequences that must occure in R1
+    R1_4trim2: datasets/bbmap/R1_v3_4trim2.fasta #sequences that must occure in R1
+    R1_k: 15 #minimum lenth of substring to match
+    R2: datasets/bbmap/R2_v3.fasta #sequences that must not occure in R1
+    R2_k: 15 #minimum lenth of substring to match
+
+#Parameters for filterin out 16S havving reads
+16S:
+    hmm_reads:
+        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        e: 1000
+        ts: 600
+        te: 1000
+        rs: 1
+        re: 350
+        length: 200 #match length in read
+        max_R2_fraction: 0.3
+    hmm_contigs:
+        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        e: 1000
+        ts: 550
+        te: 990
+        rs: 1
+        re: 560
+        length: 301  #match length in read
+        max_R2_fraction: 0.3
+
+min_contig_length: 400
+max_contig_length: 12000000000
+clustering_frac: 0.97
+ref:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+ref4picard:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic_simple_names.fasta
+#########################
+# CPU and memory params #
+#########################
+MACHINE:
+    threads_julia: 4
+    memory_java: 4
+    threads_sambamba: 4
+    threads_spades: 4
+    threads_barnap: 4
+    threads_cdhit: 4
+    threads_nhmmer: 24
+    threads_bwa: 4
+    threads_salmon: 4
+    threads_kraken: 4
+    threads_blast: 4
+    threads_swarm: 4
+    threads_dada: 8
+
+##############
+# References #
+##############
+REFERENCE: datasets/small_dataset/references/GRCh38.primary_assembly.chr21_reduced.fa
+TRANSCRIPTS:
+GFF3: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gff3
+GTF: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gtf
+###################
+# Fastqc options. #
+###################
+FASTQC:
+    kmer_size: 5   # [5]
+
+############
+# Trimming #
+############
+BBDUK:
+    threads: 8
+    ref: datasets/bbmap/two_short.fa
+    ktrim: r
+    k: 23
+    mink: 11
+    hdist: 1
+    minlength: 250
+    maxns: 0
+    qtrim: r
+    trimq: 20
+    additional_params: "tpe tbo"
+
+###############
+# Subsampling #
+###############
+SUBSAMPLING:
+    threads: 4
+    run: True 
+    subsample_to:
+
+###############
+# QC          #
+###############
+DNA_GC:
+    win_size: 100
+
+KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
+BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+#DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
+DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz 
+#misc
+dt: r1 
+r1c: minsize1
+r2c: minsize1
+

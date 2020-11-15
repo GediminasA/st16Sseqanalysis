@@ -1,7 +1,8 @@
 push!(LOAD_PATH, dirname(Base.PROGRAM_FILE)*"/julia_modules/")
-using sanitise
+using SequenceAnalysisAndDesign
 using ArgParse2
-using DataFrames
+using DataFrames 
+using Query 
 using CSV 
 function julia_main()::Cint
     parser = ArgumentParser( description = "Extract clusters of a proper size and without close chimeras")
@@ -11,8 +12,11 @@ function julia_main()::Cint
     add_argument!(parser, "-t", "--tax-assign", type = String, help = "Taxonomy assignment files - down to genus level. Should match the lower level clustering fasta file ")
     add_argument!(parser, "-m", "--min-cluster-size", type = Float64, help = "Minimum cluster size")
     add_argument!(parser, "-f", "--fasta", type = String, help = "Fasta file matching lower lever of clustering ")
-    add_argument!(parser, "-c", "--detected-chimers", type = String, help = "Info of detected chimeric clusters ", default = "chimeric_info.csv")
+    add_argument!(parser, "-d", "--dir", type = String, help = "Directory for output", default = "grouping_info")
     args = parse_args(parser)
+    if !isdir(args.dir)
+        mkdir(args.dir)
+    end 
     aln_all = Alignment(args.fasta) 
     centroid_genus = parse_dada_results(args.tax_assign)
     cl1  = read_jc_clusters(args.cluster_lower_level)
@@ -38,16 +42,47 @@ function julia_main()::Cint
             #end 
             sub_aln = sub_alignment(aln_all,ids_for_common_analyses)
             recombs = eval_recomb(sub_aln)
-            recombs[:Group] = fill(groupct,nrow(recombs))
+            recombs.Group = fill(groupct,nrow(recombs))
             recomb_data = vcat(recomb_data,recombs)
         end 
     end
-    println(stderr,"Chimeric reads detection info: ",args.detected_chimers)
-    CSV.write(args.detected_chimers, recomb_data)
+    chimof = args.dir*   "/chimeric.csv"
+    println(stderr,"Chimeric reads detection info: ", chimof)
+    CSV.write(chimof, recomb_data) 
+    chimeric_ids = @from i in recomb_data begin
+                            @where i.Unique_snps  < 2
+                            @select { i.Read_name}
+                            @collect DataFrame 
+                    end
+    #filter out detection
+
 
     
     #aln = sanitise.Alignment(args.input_fasta)
     #println(aln_conservation(aln,ignore_amounts=true))
+    #construct main output data frame
+    finald = DataFrame()
+    read_names = collect(keys(cl1))
+    finald.Centroids = read_names 
+    finald.Cluster_name = map( x -> centroid_genus[x], read_names) 
+    finald.Genus = map( x -> split(centroid_genus[x],"_")[1], read_names) 
+    finald.Size = map(x -> length(x),values(cl1))
+    finald.Proper_size  = collect(values(proper_sizes)) 
+    finald.Chimeric = map(x -> (x in chimeric_ids.Read_name),read_names)
+    allof = args.dir* "/all_clusters.csv"
+    println(stderr,"Data on all cluster: ", allof)
+    CSV.write(allof, finald)
+    good_cluster = @from i in finald begin
+                            @where i.Proper_size  && !i.Chimeric        
+                            @select { i.Cluster_name, i.Genus , i.Size}
+                            @collect DataFrame 
+                        end 
+    
+    insertcols!(good_cluster, 1,:Entry => collect(1:nrow(good_cluster)))
+    goodof = args.dir*   "/chosen_clusters.csv"
+    println(stderr,"Data on chosen cluster: ", goodof)
+    CSV.write(goodof, good_cluster)
+
 
     return 0
 end

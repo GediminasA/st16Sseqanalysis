@@ -19,7 +19,7 @@ if (TRANSCRIPTS != None):
         threads:
             JULIA_THREADS
         shell:
-            "singularity/julia.sif --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
+            "scripts/julia.sh --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
             "-a {input[0]} -b {input[1]} -o {params.output_stem} " +
             "-r {params.gz} 2>&1 | tee -a {log}"
 
@@ -43,7 +43,7 @@ elif (gff != None and REFERENCE != None):
             threads:
                 JULIA_THREADS
             shell:
-                "singularity/julia.sif --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
+                "scripts/julia.sh --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
                 "-a {input[0]} -b {input[1]} -o {params.output_stem} " +
                 "-g {params.ref} -f {params.gff} 2>&1 | tee -a {log}"
 
@@ -66,7 +66,7 @@ elif (REFERENCE != None):
             threads:
                 JULIA_THREADS
             shell:
-                "singularity/julia.sif --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
+                "scripts/julia.sh --depwarn=no PolyAAnalysis.jl/scripts/mark_poly_A.jl -i -p {threads} " +
                 "-a {input[0]} -b {input[1]} -o {params.output_stem} " +
                 "-g {params.ref} 2>&1 | tee -a {log}"
 

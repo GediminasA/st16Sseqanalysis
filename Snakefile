@@ -180,7 +180,15 @@ rule test_class:
         "kosa_blast_summary_genus.tsv",
         "coli_blast_summary_genus.tsv",
 
+rule test_grouping:
+    input:
+        temp(expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",stem=STEMS))
 
+rule quality:
+    input:
+        OUT + "/picard_all_report.html",
+        MULTIQC_DIR + "/fastqc_report_raw_reads.html",
+        MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
 
 rule standard:
     input:
@@ -193,8 +201,6 @@ rule standard:
         MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
         expand(tmp + "/{stem}_final_list.txt", stem=STEMS),
-        expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_blast_summary_genus.tsv", stem=STEMS),
-        expand(tmp + "/16S_amplicons/{stem}_R1_250bp_centroids_dada2classify.csv", stem=STEMS),
         #expand(tmp + "/{stem}_final_list.txt", stem=STEMS),
         #tmp + "/Genus_analysis_pairedreads_filtered_fractions.csv",
         #expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_250bp_woident_unoise_swarm_wosinglets.fasta", stem=STEMS),
