@@ -82,6 +82,21 @@ function julia_main()::Cint
     goodof = args.dir*   "/chosen_clusters.csv"
     println(stderr,"Data on chosen cluster: ", goodof)
     CSV.write(goodof, good_cluster)
+    #output contigs
+    ct = 0
+    for r in eachrow(finald)
+        ct += 1
+        if r.Proper_size 
+            f=open(args.dir*"/$ct","w")
+            for id in cl1[r.Centroids]
+                println(f,id)
+            end 
+            close(f)
+            f=open(args.dir*"/$ct."*r.Cluster_name,"w")
+            println(f,length(cl1[r.Centroids]))
+            close(f)
+        end 
+    end
 
 
     return 0
