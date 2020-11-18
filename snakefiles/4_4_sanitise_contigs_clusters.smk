@@ -119,7 +119,7 @@ rule analyse_centroids_on_reference:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv",
     params:
         ref = CONFIG["ref"],
-        genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/cluster_genus_size.csv"
+        genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/chosen_clusters.csv"
     shell:'''
         scripts/julia.sh scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
         '''

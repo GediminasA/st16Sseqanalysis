@@ -1,4 +1,3 @@
-push!(LOAD_PATH, dirname(Base.PROGRAM_FILE)*"/julia_modules/")
 using SequenceAnalysisAndDesign
 using ArgParse2
 using DataFrames 
@@ -72,30 +71,28 @@ function julia_main()::Cint
     allof = args.dir* "/all_clusters.csv"
     println(stderr,"Data on all cluster: ", allof)
     CSV.write(allof, finald)
-    good_cluster = @from i in finald begin
-                            @where i.Proper_size  && !i.Chimeric        
-                            @select { i.Cluster_name, i.Genus , i.Size}
+    chosen_clusters = @from i in finald begin
+                            @where i.Proper_size  #&& !i.Chimeric        
+                            @select { i.Cluster_name, i.Genus,i.Centroids , i.Size, i.Chimeric}
                             @collect DataFrame 
                         end 
     
-    insertcols!(good_cluster, 1,:Entry => collect(1:nrow(good_cluster)))
-    goodof = args.dir*   "/chosen_clusters.csv"
-    println(stderr,"Data on chosen cluster: ", goodof)
-    CSV.write(goodof, good_cluster)
+    insertcols!(chosen_clusters, 1,:ID => collect(1:nrow(chosen_clusters)))
+    chosenof = args.dir*   "/chosen_clusters.csv"
+    println(stderr,"Data on chosen cluster: ", chosenof)
+    CSV.write(chosenof, chosen_clusters)
     #output contigs
     ct = 0
-    for r in eachrow(finald)
-        ct += 1
-        if r.Proper_size 
-            f=open(args.dir*"/$ct","w")
-            for id in cl1[r.Centroids]
-                println(f,id)
-            end 
-            close(f)
-            f=open(args.dir*"/$ct."*r.Cluster_name,"w")
-            println(f,length(cl1[r.Centroids]))
-            close(f)
+    for r in eachrow(chosen_clusters)
+        ct = r.ID  
+        f=open(args.dir*"/$ct","w")
+        for id in cl1[r.Centroids]
+            println(f,id)
         end 
+        close(f)
+        f=open(args.dir*"/$ct."*r.Cluster_name,"w")
+        println(f,length(cl1[r.Centroids]))
+        close(f)
     end
 
 

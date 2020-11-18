@@ -8,7 +8,7 @@
 # Some parameters might be or might become  obolete. Sorry! #
 #############################################################
 
-SAMPLES:   Zymo1-2X-65C_S6 #Geordi-Zymo-even-1 Geordi-Zymo-even-2 #Zymo1-2X-55C_S2 
+SAMPLES:   Zymo1-2X-65C_S6 Geordi-Zymo-even-1 Geordi-Zymo-even-2 Zymo1-2X-55C_S2 
 INPUT-DIR:  /media/root/ngs_nas3/2020_06_29_Geordi_standartai 
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
@@ -32,7 +32,7 @@ PRIMERS:
 #Parameters for filterin out 16S havving reads
 16S:
     hmm_reads:
-        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        model: /media/root/ocean/shared/DATABASES_tmp/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
         e: 1000
         ts: 600
         te: 1000
@@ -53,7 +53,7 @@ PRIMERS:
 min_contig_length: 400
 max_contig_length: 12000000000
 clustering_frac: 0.97
-ref:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
+ref: datasets/testingdata/expected_contigs/zymo_expected_contigs.fa   #/mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
 ref4picard:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic_simple_names.fasta
 #########################
 # CPU and memory params #
@@ -119,7 +119,8 @@ DNA_GC:
 KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
 BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
 #DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
-DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz 
+#DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz
+DADA_DB: /media/root/ocean/shared/DADA2_tmp/silva_nr99_v138_train_set.fa.gz
 #misc
 dt: r1 
 r1c: minsize1

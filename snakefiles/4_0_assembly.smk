@@ -384,19 +384,19 @@ rule getR2_revc:
 
 checkpoint group_reads_by_first250bp:
     input:
-        cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_unoiseM1_swarmD2.fasta",
-        cl2 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_unoiseM1_swarmD2_clusterP97.fasta",
+        cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2.fasta",
+        cl2 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_clusterP97.fasta",
         r1 = OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-        dada_cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_unoiseM1_swarmD2_dada2classify.csv",
+        dada_cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_dada2classify.csv",
     output:
-        directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
-        tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
+        dir = directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
+        #tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
     params:
         stem = "cl",
-        minsizefrac = 0.001,
+        minsizefrac = 0.01,
     shell:
         '''
-        julia scripts/extract_good_clusters.jl  -a {input.cl1}.gjc -b  {input.cl2}.jc -m {params.minsizefrac}
+        scripts/julia.sh  scripts/extract_good_clusters.jl  -a {input.cl1}.gjc -b  {input.cl2}.jc -m {params.minsizefrac} -t {input.dada_cl1} -f {input.cl1}  -d {output.dir}
          '''
 
 checkpoint group_reads_by_first250bpdev:

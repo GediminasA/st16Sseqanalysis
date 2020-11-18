@@ -143,15 +143,18 @@ rule test_assebly_fitness:
 
 rule cp4_assembly4_test:
     input:
-        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
+        #tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
     output:
         "ASSMBLIES/{pref}@{stem}.fasta"
     shell:
         "cp {input} {output}"
+
 rule test_assembly:
     input:
-        expand("ASSMBLIES/attc1@{stem}.fasta",stem=STEMS)
+        expand("ASSMBLIES/first@{stem}.fasta",stem=STEMS)
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem = STEMS)
+
 rule get_contigd_after_cleaning:
     input:
         expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta", stem = STEMS)

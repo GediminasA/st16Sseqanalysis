@@ -7,17 +7,14 @@ using XAM
 using FASTX
 using BioSequences
 using BioAlignments
-
-push!(LOAD_PATH, "/mnt/beegfs/ga/rnd-it-molbio-16S-geordi/scripts/julia_modules/ArgParse2.jl/src")
-println()
 using ArgParse2
 
 "Parse genus asignment"
 function parse_genus_info(inf::String)
     out = Dict{String,String}()
-    df = DataFrame(CSV.read(inf))
+    df = DataFrame(CSV.File(inf))
     for r in eachrow(df)
-	out[string(r.Cluster)] = split(split(r.Genus,"-")[1],"_")[1]
+	out[string(r.ID)] = split(split(r.Genus,"-")[1],"_")[1]
     end
     return(out)
 end
@@ -155,6 +152,7 @@ function main()
     #dat of all matches on reference will be collected for filtering
     matches = DataFrame(Contig_ID = Array{String,1}(),
 		        Ref_ID = Array{String,1}(),
+		        Contig_length = Array{Int64,1}(),
 			Match_length = Array{Int64,1}(),
 			Identity = Array{Float64,1}(),
 			Coverage_contig = Array{Float64,1}(),
@@ -212,7 +210,7 @@ function main()
 	    idfrac = matched/l
 	    lfrac_c = l/real_length
 	    lfrac_r = l/length(ref[rn])
-	    df_row=[tempname,rn,l,idfrac,lfrac_c,lfrac_r,t_pos[1],t_rpos[1],pos,rpos,genus,expected_g]
+	    df_row=[tempname,rn,real_length,l,idfrac,lfrac_c,lfrac_r,t_pos[1],t_rpos[1],pos,rpos,genus,expected_g]
 	    push!(matches,df_row)
 	    
         end
