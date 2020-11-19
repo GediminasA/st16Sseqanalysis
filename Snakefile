@@ -127,7 +127,7 @@ rule test_vsearch_best:
 rule test_dedup_final:
     input:
        expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["mergd","notmergd","all"]),
-       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["prededup"],tp=["mergd","notmergd","all"])
+       #expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["prededup"],tp=["mergd","notmergd","all"])
 
 rule test_r2_gc:
     input:
@@ -143,8 +143,8 @@ rule test_assebly_fitness:
 
 rule cp4_assembly4_test:
     input:
-        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
-        #tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
+        #tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta"
     output:
         "ASSMBLIES/{pref}@{stem}.fasta"
     shell:
@@ -152,7 +152,7 @@ rule cp4_assembly4_test:
 
 rule test_assembly:
     input:
-        expand("ASSMBLIES/first@{stem}.fasta",stem=STEMS)
+        expand("ASSMBLIES/attc@{stem}.fasta",stem=STEMS)
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem = STEMS)
 
 rule get_contigd_after_cleaning:

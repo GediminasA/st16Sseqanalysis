@@ -69,7 +69,7 @@ rule vsearch_paired:
     threads: 3
     shell:
         '''
-        julia scripts/cluster_intersect.jl -m {params.minclsize} -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
+        scripts/julia.sh scripts/cluster_intersect.jl -m {params.minclsize} -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
         '''
 
 rule vsearch_paired_sw:
@@ -83,7 +83,7 @@ rule vsearch_paired_sw:
     threads: 3
     shell:
         '''
-        julia scripts/cluster_intersect.jl -m {params.minclsize} -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
+        scripts/julia.sh scripts/cluster_intersect.jl -m {params.minclsize} -s  -1 {input[2]} -2 {input[3]} -a {input[0]}.gjc -b {input[1]}.gjc -o {output[0]} -p {output[1]}
         '''
 
 

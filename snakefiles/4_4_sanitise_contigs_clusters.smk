@@ -53,9 +53,9 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_250bp_woident_swarmD2_clusterL96.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids.fasta"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta"
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1pre.fasta"
     params:
-        names = tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.names"
+        names = tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1pre.names"
     shell:
         '''
         set +e
@@ -69,9 +69,27 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
         else
             exit 0
         fi
-
-
         '''
+
+rule remove_conatined_and_short:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1pre.fasta"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta"
+    params:
+        coverage = 0.9,
+        ident = 0.97,
+        length = 0.52 #smaller contigs will be discarded
+    shell:
+        '''
+        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/extract_proper_length_contig.jl \
+        -i {input} -o {output} \
+        -e {params.length} -d {params.ident} -v {params.coverage}
+        '''
+        #--filter-length  --remove-contained
+        #'''
+
+
 
 # mapping on reference
 rule map_centroid_on_ref:

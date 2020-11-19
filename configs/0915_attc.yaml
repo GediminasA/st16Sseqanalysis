@@ -32,7 +32,8 @@ PRIMERS:
 #Parameters for filterin out 16S havving reads
 16S:
     hmm_reads:
-        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        #model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        model: /media/root/ocean/shared/DATABASES_tmp/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
         e: 1000
         ts: 600
         te: 1000
@@ -119,7 +120,8 @@ DNA_GC:
 KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
 BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ATTC/final/attc_16S1500bp_final_wog.fasta 
 #DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
-DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz 
+#DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr99_v138_train_set.fa.gz 
+DADA_DB: /media/root/ocean/shared/DADA2_tmp/silva_nr99_v138_train_set.fa.gz
 #misc
 dt: r1 
 r1c: minsize1

@@ -8,8 +8,10 @@ outstem = ARGS[3]
 
 blast_fields = "qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen"
 dada_fields = "Contig Kingdom Phylum Class Order Family Genus"
-df = CSV.read(blastfile,header = Array{String,1}(split(blast_fields)))
-df2 = CSV.read(dadatax,header = Array{String,1}(split(dada_fields)), skipto = 2)
+df = CSV.File(blastfile,header = Array{String,1}(split(blast_fields)))
+df2 = CSV.File(dadatax,header = Array{String,1}(split(dada_fields)), skipto = 2)
+df = DataFrame(df)
+df2 = DataFrame(df2)
 #ensure that contig names are strings
 df.qseqid = string.(df.qseqid)
 df2.Contig = string.(df2.Contig)
