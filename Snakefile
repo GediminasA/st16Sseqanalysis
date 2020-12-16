@@ -47,7 +47,11 @@ localrules: filterout_r1primer_sequence_having_reads_on16S
 
 rule all:
     input:
-        OUT + "/INSERT_SIZE/all.csv",
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",stem=STEMS),
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",stem=STEMS),
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001_pseudoamplicon.fastq.gz",stem=STEMS),
+        expand(OUT + "/16S_having_reads/{stem}_L001_R1_001_pseudoamplicon.fastq.gz",stem=STEMS),
+        #OUT + "/INSERT_SIZE/all.csv",
         #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_dedup.fastq.gz", stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",stem=STEMS),
         #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon.csv",stem=STEMS),
@@ -56,8 +60,8 @@ rule all:
         #OUT + "/INSERT_SIZE/" + "summary_first_letter_counts.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians.csv",
         #OUT + "/INSERT_SIZE/" + "summary_insert_size_medians_all.csv",
-        OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
-        #OUT + "/picard_all_report.html",
+        #OUT + "/INSERT_SIZE/" + "summary_insert_sizes_histogram.csv",
+        ##OUT + "/picard_all_report.html",
         #MULTIQC_DIR + "/fastqc_report_raw_reads.html",
         #MULTIQC_DIR + "/fastqc_report_trimmed_reads.html",
         #expand(tmp + "/16S_amplicons/{stem}_R1_250bp_testcentroids.fasta", stem=STEMS),
@@ -126,7 +130,7 @@ rule test_vsearch_best:
 
 rule test_dedup_final:
     input:
-       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["mergd","notmergd","all"]),
+       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["all"]),
        #expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["prededup"],tp=["mergd","notmergd","all"])
 
 rule test_r2_gc:
@@ -141,6 +145,30 @@ rule test_assebly_fitness:
     input:
         expand(OUT + "/COMPARE_VS_REF/CLUSTERS/{stem}/cluster_genus_size.csv", stem=STEMS)
 
+
+rule test_assembly_dev:
+    input:
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.bam",stem=STEMS),
+        #aggregate_ncbi_cleaned1_aligned
+        #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.csv",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",stem=STEMS),
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_denovochim.fasta",stem=STEMS)
+        #tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.fasta",stem=STEMS)
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.bam",stem=STEMS)
+
+rule test_metagenome_kraken:
+    input:
+        expand(tmp + "/BRACKEN/16sdedup_{stem}.class.txt",stem=STEMS),
+        expand(tmp + "/BRACKEN/16sdedup_{stem}.species.txt",stem=STEMS),
+        expand(tmp + "/BRACKEN/16sdedup_{stem}.genus.txt",stem=STEMS),
+        expand(tmp + "/BRACKEN/all16s_{stem}.species.txt",stem=STEMS),
+        expand(tmp + "/BRACKEN/all16s_{stem}.genus.txt",stem=STEMS),
+        #expand(tmp + "/BRACKEN/r2not16s_{stem}.species.txt",stem=STEMS),
+        #expand(tmp + "/BRACKEN/r2not16s_{stem}.genus.txt",stem=STEMS),
+
 rule cp4_assembly4_test:
     input:
         #tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
@@ -152,7 +180,7 @@ rule cp4_assembly4_test:
 
 rule test_assembly:
     input:
-        expand("ASSMBLIES/attc@{stem}.fasta",stem=STEMS)
+        expand("ASSMBLIES/280@{stem}.fasta",stem=STEMS)
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem = STEMS)
 
 rule get_contigd_after_cleaning:

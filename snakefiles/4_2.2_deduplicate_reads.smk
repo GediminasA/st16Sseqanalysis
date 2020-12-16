@@ -21,8 +21,8 @@ rule merge_4dedup:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_all.fastq.gz",
     output:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz",
-        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmergedpre.fastq.gz", #for future removal of N
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmergedpre.fastq.gz",
 
     log:
         LOGS + "/merge_4dedup_{stem}.log"
@@ -40,6 +40,16 @@ rule merge_4dedup:
                 " outu1={output[1]} " +
                 " outu2={output[2]} " +
                 "-Xmx{params.m}g &> {log}"
+
+rule removen_in_R1:
+    input:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmergedpre_woNfq.fastq.gz", #for future removal of N
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmergedpre.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_notmerged.fastq.gz", #for future removal of N
+        tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R2_001_ini_notmerged.fastq.gz",
+    shell:
+        " scripts/repair.sh in={input[0]} in2={input[1]} out={output[0]} out2={output[1]}  "
 
 rule get_merged_R2:
     input:
@@ -189,6 +199,29 @@ rule get_all_prededup:
         cat  {input[0]} {input[2]} > {output[0]} ;
         cat  {input[1]} {input[3]} > {output[1]} ;
         '''
+
+
+rule get_pseudoamplicon:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz"
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_pseudoamplicon.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_pseudoamplicon.fastq.gz"
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        '''bbduk.sh in={input[0]} out={output[0]} \
+                threads={threads} \
+                minlength=240 \
+                overwrite=t \
+                ftr=239 ;\
+            seqkit seq --reverse --complement {output[0]} -o {output[1]}
+        '''
+
+
+
+
+
 
 #CHECK deduplication
 

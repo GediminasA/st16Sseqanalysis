@@ -498,6 +498,16 @@ def aggregate_ref_cleaned1_aligned(wildcards):
     return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_onref.bam" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 
+def aggregate_ncbi_cleaned1_aligned(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_onncbi.bam" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
 def aggregate_ref_uniquereads_aligned(wildcards):
     '''
     aggregate the file names of the random number of files
@@ -518,6 +528,15 @@ def aggregate_ref_cleaned_reads(wildcards):
     return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_refbasedclean.fasta" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 
+def aggregate_ref_cleaned_reads_info(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 def aggregate_salmon(wildcards):
     '''
     aggregate the file names of the random number of files
@@ -1397,6 +1416,131 @@ rule quantify_contigs:
     shell:
         "salmon quant --meta -p {threads}  -t {input[1]} -a {input[0]} -l A  --output {params.out_dir}  --posBias ; mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}"
 
+rule run_kraken_on_deduplicated_reads:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_all.fastq.gz",
+    output:
+        tmp + "/KRAKEN/de_{stem}_dedup_all_kraken.txt",
+        tmp + "/KRAKEN/de_{stem}_dedup_all_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+
+rule run_bracken_on_deduplicated_reads4class:
+    input:
+        tmp + "/KRAKEN/de_{stem}_dedup_all_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/16sdedup_{stem}.class.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l C -d {params.db}  -i {input} -o {output}"
+
+rule run_bracken_on_deduplicated_reads4genus:
+    input:
+        tmp + "/KRAKEN/de_{stem}_dedup_all_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/16sdedup_{stem}.genus.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l G -d {params.db}  -i {input} -o {output}"
+
+rule run_bracken_on_deduplicated_reads4species:
+    input:
+        tmp + "/KRAKEN/de_{stem}_dedup_all_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/16sdedup_{stem}.species.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l S -d {params.db} -i {input} -o {output}"
+
+
+rule run_kraken_on_notdeduplicated_reads:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+    output:
+        tmp + "/KRAKEN/all16s_{stem}_kraken.txt",
+        tmp + "/KRAKEN/all16s_{stem}_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+
+rule run_bracken_on_notdeduplicated_reads4genus:
+    input:
+        tmp + "/KRAKEN/all16s_{stem}_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/all16s_{stem}.genus.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l G -d {params.db}  -i {input} -o {output}"
+
+rule run_bracken_on_notdeduplicated_reads4species:
+    input:
+        tmp + "/KRAKEN/all16s_{stem}_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/all16s_{stem}.species.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l S -d {params.db} -i {input} -o {output}"
+
+
+rule run_kraken_on_r2_reads:
+    input:
+        OUT + "/16S_having_reads_R2wo16S/{stem}_L001_R2_001.fastq.gz"
+    output:
+        tmp + "/KRAKEN/r2not16s_{stem}_kraken.txt",
+        tmp + "/KRAKEN/r2not16s_{stem}_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input}"
+
+
+rule run_bracken_on_r2_reads4genus:
+    input:
+        tmp + "/KRAKEN/r2not16s_{stem}_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/r2not16s_{stem}.genus.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l G -d {params.db}  -i {input} -o {output}"
+
+rule run_bracken_on_r2_reads4species:
+    input:
+        tmp + "/KRAKEN/r2not16s_{stem}_kraken_raport.txt"
+    output:
+        tmp + "/BRACKEN/r2not16s_{stem}.species.txt"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    conda: "../envs/metagenome.yaml"
+    shell:
+        "bracken -l S -d {params.db} -i {input} -o {output}"
+
+
+##########################OLDSTAFF################
 rule run_kraken_on_contigs:
     input:
         tmp + "/{stem}_final_contigs.fasta"

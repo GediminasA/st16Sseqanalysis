@@ -61,6 +61,7 @@ rule assign_taxonomy_dada_rds:
         "{stem}_dada2classify.csv",
     params:
         db = config["DADA_DB"],
+        db_species = config["DADA_DB_species"],
     conda:
         "../envs/dada2.yaml"
     threads:

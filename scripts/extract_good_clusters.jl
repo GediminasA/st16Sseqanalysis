@@ -48,11 +48,15 @@ function julia_main()::Cint
     chimof = args.dir*   "/chimeric.csv"
     println(stderr,"Chimeric reads detection info: ", chimof)
     CSV.write(chimof, recomb_data) 
-    chimeric_ids = @from i in recomb_data begin
-                            @where i.Unique_snps  < 2
-                            @select { i.Read_name}
-                            @collect DataFrame 
-                    end
+    if nrow(recomb_data) > 0
+        chimeric_ids = @from i in recomb_data begin
+                                @where i.Unique_snps  < 2
+                                @select { i.Read_name}
+                                @collect DataFrame 
+                        end
+    else 
+        chimeric_ids = DataFrame(Read_name = [])
+    end 
     #filter out detection
 
 

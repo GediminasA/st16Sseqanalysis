@@ -78,14 +78,16 @@ rule remove_conatined_and_short:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta"
     params:
         coverage = 0.9,
-        ident = 0.97,
+        ident = 0.98,
         length = 0.52 #smaller contigs will be discarded
     shell:
         '''
         scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/extract_proper_length_contig.jl \
         -i {input} -o {output} \
-        -e {params.length} -d {params.ident} -v {params.coverage}
+        -e {params.length} -d {params.ident} -v {params.coverage} \
+        --filter-length --remove-contained
         '''
+        #--filter-length  --remove-contained
         #--filter-length  --remove-contained
         #'''
 
@@ -133,7 +135,7 @@ rule analyse_centroids_on_reference:
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_onref.bam",
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta",
+        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1refbasedclean.fasta",
         tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv",
     params:
         ref = CONFIG["ref"],
@@ -163,6 +165,7 @@ rule map_reads_on_contigs:
     shell:'''
     bowtie2  -X 2000   --very-fast     -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort -n  > {output}
     '''
+
 
 rule get_salmon_index4centroids:
     input:

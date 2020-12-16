@@ -8,7 +8,7 @@
 # Some parameters might be or might become  obolete. Sorry! #
 #############################################################
 
-SAMPLES: Geordi-ATCC-even-1 #Geordi-ATCC-even-2
+SAMPLES: Geordi-ATCC-even-1 Geordi-ATCC-even-2
 INPUT-DIR: /media/root/ngs_nas3/2020_06_29_Geordi_standartai  
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
@@ -100,7 +100,7 @@ BBDUK:
     minlength: 250
     maxns: 0
     qtrim: r
-    trimq: 20
+    trimq: 15
     additional_params: "tpe tbo"
 
 ###############
@@ -108,8 +108,8 @@ BBDUK:
 ###############
 SUBSAMPLING:
     threads: 4
-    run: False
-    subsample_to:
+    run: false 
+    subsample_to: 638165
 
 ###############
 # QC          #

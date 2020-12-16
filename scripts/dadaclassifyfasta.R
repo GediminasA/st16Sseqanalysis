@@ -2,6 +2,7 @@ library(dada2); packageVersion("dada2")
 library(DECIPHER);
 packageVersion("dada2");
 dbin <- snakemake@params[["db"]]
+dbin_species <- snakemake@params[["db_species"]]
 dfiltered <- snakemake@params[["dada_filt"]]
 fasta <- snakemake@input[[1]]
 threads <- snakemake@threads[[1]]
@@ -39,6 +40,8 @@ taxid <- taxid[,-7]
 colnames(taxid) <- ranks4out
 } else {
 taxid <- assignTaxonomy(seqs, dbin,minBoot=20,tryRC=TRUE,multithread=threads,verbose=TRUE)
+taxid.plus <- addSpecies(taxid,dbin_species, verbose=TRUE,allowMultiple=TRUE)
+
 }
-row.names(taxid) <- seqnames
-write.table(taxid, output_tax_table)
+row.names(taxid.plus) <- seqnames
+write.table(taxid.plus, output_tax_table)

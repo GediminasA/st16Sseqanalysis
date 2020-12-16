@@ -106,7 +106,7 @@ rule add_pseudo_salmon_based_counts_chim:
     output:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_cluster_subs4chimera_samon_sizes.fasta",
     shell:
-        " scripts/julia.sh scripts/add_salmon_sizes.jl -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
+        " scripts/julia.sh scripts/add_salmon_sizes.jl  [- -i {input[0]} -s {input[1]} -o {output[0]} -d {input[2]}/duplicate_clusters.tsv "
 
 
 rule add_pseudo_salmon_based_counts:
@@ -160,6 +160,8 @@ rule map_reads_on_mergedcontigs_4_cleaning:
     input:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta.rev.2.bt2",
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_all.fastq.gz"
         OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
         OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
     output:
@@ -168,6 +170,17 @@ rule map_reads_on_mergedcontigs_4_cleaning:
     shell:'''
     bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -f 2 -q 1 -b | samtools sort -n  > {output}
     '''
+rule map_centroid_on_ncbi:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.bam",
+    params:
+        ref = CONFIG["NCBI_CONTIGS"]
+    threads:
+        CONFIG["MACHINE"]["threads_bwa_big"]
+    shell:
+        "bwa mem -t {threads} {params.ref} {input}   | samtools view -b | samtools sort  > {output} ; samtools index {output}"
 
 rule quantify_contigs_4_cleaning:
     input:
@@ -208,9 +221,24 @@ bwa mem -a {input[0]} {input[1]} | samtools view -b | samtools sort  > {output} 
 '''
 ##Quantification#
 
+rule get_ref_cleaned_contigs:
+    input:
+        fa = aggregate_ref_cleaned_reads,
+        info = aggregate_ref_cleaned_reads_info
+    output:
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",
+        tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.csv"
+    params:
+        prefix="cl_"
+    shell:
+        '''
+        cat {input.fa} > {output[0]}
+        cat {input.info} > {output[1]}
+        '''
+
 rule get_contigs_for_quant:
     input:
-        aggregate_ref_cleaned_reads
+        aggregate_ref_cleaned1
     output:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_orgnames.fasta",
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
@@ -315,8 +343,10 @@ rule quantify_contigs_final:
 rule quantify_contigs_rankings_final2:
     input:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_cluster_salon_idx",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+        #OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_mergd.fastq.gz",
+        #OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_mergd.fastq.gz"
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz"
     output:
         tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",
     params:
@@ -331,6 +361,23 @@ rule quantify_contigs_rankings_final2:
              ;
          mv {params.out_dir}/quant.sf {output} ; rm -r {params.out_dir}
 '''
+
+rule remove_chimeras_denovo:
+    input:
+        #contigs = tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+        contigs = tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+        bam = tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.bam",
+        supports = tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs_salmon2.csv",
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_denovochim.fasta"
+    shell:
+        '''
+        echo {input.contigs}
+        echo {input.bam}
+        echo {input.supports}
+        '''
+
+
 
 
 rule analyse_contigs_on_reference:

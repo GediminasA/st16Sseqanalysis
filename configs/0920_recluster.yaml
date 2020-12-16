@@ -8,13 +8,13 @@
 # Some parameters might be or might become  obolete. Sorry! #
 #############################################################
 
-SAMPLES:   Zymo1-2X-65C_S6 Geordi-Zymo-even-1 #Geordi-Zymo-even-2 #Zymo1-2X-55C_S2 
-INPUT-DIR:  /media/root/ocean/projects/ga/2020_11_18_downsample_4_article_pretrimmed_shorter 
+SAMPLES:   Zymo1-2X-65C_S6 Geordi-Zymo-even-1 Geordi-Zymo-even-2 #Zymo1-2X-55C_S2 
+INPUT-DIR: /media/root/ngs_nas3/2020_06_29_Geordi_standartai
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
-TMP-DIR: 0920/tmp
-OUT-DIR: 0920/out 
-SCRATCH: 0920/tmp
+TMP-DIR: 0920/tmp 
+OUT-DIR: 0920/out  
+SCRATCH: 0920/tmp 
 BENCH-DIR:  0920/bench 
 BENCHMARKS:  0920/benchmarks 
 
@@ -107,8 +107,8 @@ BBDUK:
 ###############
 SUBSAMPLING:
     threads: 4
-    run: False
-    subsample_to: 280000
+    run: true 
+    subsample_to:
 
 ###############
 # QC          #
