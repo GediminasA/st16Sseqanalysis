@@ -182,6 +182,30 @@ rule map_centroid_on_ncbi:
     shell:
         "bwa mem -t {threads} {params.ref} {input}   | samtools view -b | samtools sort  > {output} ; samtools index {output}"
 
+rule blast_centroid_on_nt:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.xml2",
+    params:
+        ref = CONFIG["BLAST_DB_nt"]
+    threads:
+        CONFIG["MACHINE"]["threads_blast"]
+    shell:
+        " blastn -db {params.ref} -query {input} -num_threads {threads} -max_target_seqs 3 -outfmt 16 > {output} "
+
+rule extract_only_good_db_matches:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.bam",
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_ncbiclean.fasta",
+    shell:
+        "scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/analyse_ncbialn.jl -r {input[0]} -b {input[1]} -o {output[0]} "
+
+
+
+
 rule quantify_contigs_4_cleaning:
     input:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.bam",

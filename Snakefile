@@ -146,19 +146,25 @@ rule test_assebly_fitness:
         expand(OUT + "/COMPARE_VS_REF/CLUSTERS/{stem}/cluster_genus_size.csv", stem=STEMS)
 
 
+rule test_blastn_cleanup:
+    input:
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.xml2",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
+
 rule test_assembly_dev:
     input:
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.bam",stem=STEMS),
-        #aggregate_ncbi_cleaned1_aligned
-        #expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.csv",stem=STEMS),
-        #expand(tmp + "/16S_amplicons/contigs_sanitisation/merged_outputs/{stem}_contigs_clean1_salmon.csv",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_ncbiclean_clusterL97.fasta",stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
         #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
-        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_denovochim.fasta",stem=STEMS)
-        #tmp + "/16S_amplicons/contigs_quantification/{stem}_contigs.fasta"
-        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.fasta",stem=STEMS)
-        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_self.bam",stem=STEMS)
 
+rule test_gefast_dev:
+    input:
+        expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woN_woident_swarmD2_unoiseM1_blast_summary_genus.tsv",stem=["Geordi-ATCC-even-1"])  # iini_merged_minlengthfq240_woident_woN_swarmD1
+        #expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
 rule test_metagenome_kraken:
     input:
         expand(tmp + "/BRACKEN/16sdedup_{stem}.class.txt",stem=STEMS),
@@ -206,7 +212,7 @@ rule cp4_test_class:
     shell:
         "cp {input} {output} "
 
-rule test_class:
+rule _clusterP98test_class:
     input:
         "kosa_blast_summary_genus.tsv",
         "coli_blast_summary_genus.tsv",

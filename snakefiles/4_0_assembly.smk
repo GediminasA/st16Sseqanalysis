@@ -384,7 +384,7 @@ rule getR2_revc:
 
 checkpoint group_reads_by_first250bp:
     input:
-        cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2.fasta",
+        cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2.fasta", # iini_merged_minlengthfq240_woident_woN_swarmD1
         cl2 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_clusterP97.fasta",
         r1 = OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
         dada_cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_dada2classify.csv",
@@ -393,7 +393,7 @@ checkpoint group_reads_by_first250bp:
         #tmp + "/16S_amplicons/{stem}_R1_250bp_centroids.fasta",
     params:
         stem = "cl",
-        minsizefrac = 0.01,
+        minsizefrac = 0.001,
     shell:
         '''
         scripts/julia.sh  scripts/extract_good_clusters.jl  -a {input.cl1}.gjc -b  {input.cl2}.jc -m {params.minsizefrac} -t {input.dada_cl1} -f {input.cl1}  -d {output.dir}
@@ -402,7 +402,7 @@ checkpoint group_reads_by_first250bp:
 checkpoint group_reads_by_first250bpdev:
     input:
         expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_{method}_blast_summary_genus.tsv",stem=STEMS,
-               method=[ "woident_swarmD1" , "woident_swarmD2", "unoiseM1_swarmD1", "unoiseM1_swarmD2","woident_unoiseM1_swarmD1", "woident_unoiseM1_swarmD2"  ])
+               method=[ "woident_swarmD1" , "woident_swarmD2", "woident_clusterP98_swarmD1" , "woident_clusterP98_swarmD2"])
 
 rule get_R1_of_clusters:
     input:
@@ -412,10 +412,25 @@ rule get_R1_of_clusters:
         #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq"
     shell:
         "seqkit grep -f {input[1]} {input[0]} > {output}"
 
+rule qualityretrimR1:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
+    params:
+        add =       " ftl=0 trimq=20 qtrim=r  minlength=240 ",
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell:
+        "bbduk.sh in={input[0]} out={output[0]} " +
+        " threads={threads} " +
+        " {params.add} threads={threads} " +
+        " overwrite=t "
 rule get_R2_of_clusters:
     input:
         #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
@@ -434,7 +449,7 @@ rule trim_first_unacurate_reaqds_from_R2:
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq"
     params:
-        add =       " ftl=0 ",
+        add =       " ftl=0 trimq=20 qtrim=r  ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -670,6 +685,34 @@ rule rmidenti:
         '''
         set +e
         vsearch    --derep_fulllength   {input}    --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
+        scripts/julia.sh scripts/uc2jc.jl {params.uc} > {output[1]}
+        cp {output[1]}  {output[2]}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
+        '''
+rule gefast:
+    input:
+        "{stem}.fasta",
+    output:
+        "{stem}_gefast.fasta",
+        "{stem}_gefast.fasta.jc",#local clustering at this styep
+        "{stem}_gefast.fasta.gjc", #gloval clustering
+    params:
+        uc = "{stem}_gefast.fasta.uc", #gloval clustering
+        conf = "{stem}_gefast.conf",
+
+    shell:
+        '''
+        set +e
+        echo "threshold=1" > {params.conf}
+        echo "threshold=1" >> {params.conf}
+        GeFaST {input[0]}  -t 1 -sf --swarm-fastidious-threshold 1 --use-score  --swarm-uclust {params.uc}   --sep-abundance   ";size="  -sw {output[0]}
+        #dependencies/GeFaST as {input} {params.conf}  -u {params.uc} -w {output[0]} - --sep_abundance  ";size=" -t 1 -r 1
         scripts/julia.sh scripts/uc2jc.jl {params.uc} > {output[1]}
         cp {output[1]}  {output[2]}
         exitcode=$?

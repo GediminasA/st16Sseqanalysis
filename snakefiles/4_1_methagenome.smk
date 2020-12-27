@@ -75,7 +75,7 @@ rule run_blast:
     output:
         "{stem}_blast.csv"
     params:
-        db = CONFIG["BLAST_DB"]
+        db = CONFIG["BLAST_DB_contigs"]
     threads:
         CONFIG["MACHINE"]["threads_blast"]
     shell:'''
