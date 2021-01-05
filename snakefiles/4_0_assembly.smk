@@ -92,13 +92,7 @@ rule filter_minlength4fasta:
 
 rule copy_4_clustering:
     input:
-       #tmp + "/16S_having_reads/{stem}_L001_R1_001_matchedadedup.fastq.gz",
-       #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_dedup_matched.fastq.gz",
-       #tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_001_ini_merged.fastq.gz",
        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-       #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz"
-       #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz"
-       #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz"
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_R1.fastq.gz",
     shell:
@@ -386,7 +380,6 @@ checkpoint group_reads_by_first250bp:
     input:
         cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2.fasta", # iini_merged_minlengthfq240_woident_woN_swarmD1
         cl2 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_clusterP97.fasta",
-        r1 = OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
         dada_cl1 = tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2_dada2classify.csv",
     output:
         dir = directory(tmp + "/16S_amplicons/R1clustering/{stem}_clusters"),
@@ -406,23 +399,20 @@ checkpoint group_reads_by_first250bpdev:
 
 rule get_R1_of_clusters:
     input:
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected_mergd.fastq.gz",
-        #OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
-        #OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
-        #OUT + "/16S_having_reads/{stem}_L001_R1_001_derep.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq.gz"
     shell:
-        "seqkit grep -f {input[1]} {input[0]} > {output}"
+        "seqkit grep -f {input[1]} {input[0]} -o {output}"
 
 rule qualityretrimR1:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren_beforeqretr.fastq.gz"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq.gz"
     params:
-        add =       " ftl=0 trimq=20 qtrim=r  minlength=240 ",
+        add =       " ftl=0 trimq=20 qtrim=r",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -433,23 +423,20 @@ rule qualityretrimR1:
         " overwrite=t "
 rule get_R2_of_clusters:
     input:
-        #OUT + "/16S_having_reads/{stem}_L001_R2_001_derep.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected_mergd.fastq.gz",
-        #OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
-        #OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz",
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters/{id}"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq.gz"
     shell:
-        "seqkit grep -f {input[1]} {input[0]} > {output}"
+        "seqkit grep -f {input[1]} {input[0]} -o {output}"
 
 rule trim_first_unacurate_reaqds_from_R2:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2pren.fastq.gz"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq.gz"
     params:
-        add =       " ftl=0 trimq=20 qtrim=r  ",
+        add =       " ftl=0 trimq=20 qtrim=r ",
         m =         MEMORY_JAVA
     threads:
         CONFIG["BBDUK"]["threads"]
@@ -459,24 +446,83 @@ rule trim_first_unacurate_reaqds_from_R2:
         " {params.add} threads={threads} " +
         " overwrite=t "
 
-rule repair_final:
+
+rule repair_premerge_final:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1pren.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmedini.fastq.gz"
     output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_4premerge.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_4premerge.fastq.gz",
     params:
         pref = "cl{id}_"
     shell:
         "scripts/repair.sh in1={input[0]} in2={input[1]} " +
         "out1={output[0]} out2={output[1]} ow=t "
 
+rule premerge_16S_reads_in_cluster:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_4premerge.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_4premerge.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_premerged.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_unm.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_unm.fastq.gz"
+    params:
+        m =         MEMORY_JAVA
+    threads:
+        CONFIG["BBDUK"]["threads"]
+    shell: #maxstrict=t   mininsert=300 ecct extend2=20 iterations=5 mindepthseed=300 mindepthextend=200
+        "bbmerge.sh maxstrict=t  in={input[0]} out={output[0]} " + #ecct extend2=50 iterations=10
+                " in2={input[1]} " +
+                " threads={threads} " +
+                " outu1={output[1]} " +
+                " outu2={output[2]} " +
+                "-Xmx{params.m}g "
+
+rule getRevComplofPremerged:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_premerged.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_premerged.fastq.gz",
+    shell:
+        "seqkit seq --reverse --complement -o {output} {input}"
+
+rule get_bothr1_premerge:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_premerged.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_unm.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_merc.fastq.gz",
+    shell:
+        " cat {input} > {output} "
+
+rule get_bothr2_premerge:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_premerged.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_unm.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_merc.fastq.gz",
+    shell:
+        " cat {input} > {output} "
+
+rule repair_final:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_merc_minlengthfq240.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_merc_minlengthfq200.fastq.gz",
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_final.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_final.fastq.gz",
+    params:
+        pref = "cl{id}_"
+    shell:
+        "scripts/repair.sh in1={input[0]} in2={input[1]} " +
+        "out1={output[0]} out2={output[1]} ow=t "
 
 rule merge_clustered_reads:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_final.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_final.fastq.gz",
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_merged.fasta",
     params:
@@ -490,8 +536,28 @@ rule merge_clustered_reads:
     '''
 
 
+rule fuse_clustered_reads:
+    input:
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
+    output:
+        tmp + "/16S_amplicons/R1clustering/{stem}_merged_reads/{id}_fused.fasta",
+    params:
+        name = "{id}_"
+    shell:'''
+    fuse.sh in1={input[0]} in2={input[1]} name={params.name} out={output}
+    '''
 
 
+def aggregate_fused_contigs(wildcards):
+    '''
+    aggregate the file names of the random number of files
+    generated at the  step
+    '''
+    checkpoint_output = checkpoints.group_reads_by_first250bp.get(**wildcards).output[0]
+    sample = wildcards.stem
+    return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_merged_reads/{id}_fused.fasta" ,
+           id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
 
 def aggregate_ref_cleaned1(wildcards):
     '''
@@ -571,6 +637,27 @@ def aggregate_salmon2(wildcards):
     sample = wildcards.stem
     return expand(         tmp + "/16S_amplicons/R1clustering/"+sample+"_assemblies/{id}_centroids_clean1_salmon2.csv" ,
            id=glob_wildcards(os.path.join(checkpoint_output, '{i,\d+}')).i)  #_sizef_clusterP97.fasta",
+
+rule get_pseudo_contigs:
+    input:
+        aggregate_fused_contigs
+    output:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_pseudocontigs.fasta"
+    shell:
+        " cat {input} > {output} "
+
+rule run_kraken_on_fused:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_pseudocontigs.fasta"
+    output:
+        tmp + "/KRAKEN/pseudocontigs_{stem}_kraken.txt",
+        tmp + "/KRAKEN/pseudocontigs_{stem}_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input[0]} {input[0]}  "
 
 rule collect_output:
     input:

@@ -53,7 +53,7 @@ rm -f $merge1
 rm -f $merge2
 rm -f $merge3
 rm -f $r2ext
-bbmerge.sh in=$in1 in2=$in2 out=$merge2 outu1=$merge2uR1 outu2=$merge2uR2
+bbmerge.sh  in=$in1 in2=$in2 out=$merge2 outu1=$merge2uR1 outu2=$merge2uR2
 for iterations in 20
 do
 for  k in    150 190 220 #50 100 150 200 205 210 215 220 230 240 250

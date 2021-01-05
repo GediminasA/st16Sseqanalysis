@@ -153,6 +153,12 @@ rule test_blastn_cleanup:
         expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
 
+rule test_pseudo_contigs:
+    input:
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_pseudocontigs.fasta",stem=STEMS),
+        expand(tmp + "/KRAKEN/pseudocontigs_{stem}_kraken.txt",stem=STEMS),
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woNfq_fq2fa_woident_swarmD1.fasta",stem=STEMS)
+
 rule test_assembly_dev:
     input:
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.bam",stem=STEMS),
