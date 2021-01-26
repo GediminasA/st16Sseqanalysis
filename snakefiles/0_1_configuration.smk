@@ -55,16 +55,8 @@ SAMBAMBA_THREADS = CONFIG['MACHINE']['threads_sambamba']
 MEMORY_JAVA = CONFIG["MACHINE"]["memory_java"]
 THREADS = CONFIG["MACHINE"]["threads_nhmmer"]
 
-# ------------------------------ REFERENCE ---------------------------------- #
-
-REFERENCE = CONFIG["REFERENCE"]
-GTF = CONFIG["GTF"]
-gff = CONFIG["GFF3"]
-TRANSCRIPTS = CONFIG["TRANSCRIPTS"]
-
 
 # ------------------------------ Loc ---------------------------------------- #
-ALIGN_DIR = OUT + '/ALIGNMENT'
 BENCHMARKS = CONFIG['BENCHMARKS']
 MULTIQC_DIR = OUT + '/MULTIQC'
 LOG_PATH = {

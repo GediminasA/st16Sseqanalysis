@@ -130,8 +130,8 @@ rule test_vsearch_best:
 
 rule test_dedup_final:
     input:
-       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["all"]),
-       #expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["prededup"],tp=["mergd","notmergd","all"])
+       #expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["all"]),
+       expand(OUT + "/16S_having_reads/{stem}_L001_{r}_001_{de}_{tp}_woident_blast_summary_genus.tsv",stem=STEMS,r=["R1"],de=["dedup"],tp=["mergd"])
 
 rule test_r2_gc:
     input:
@@ -150,6 +150,8 @@ rule test_blastn_cleanup:
     input:
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.xml2",stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast_wocontained.fasta",stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_quantification/{stem}_contigsrefcleaned.fasta",stem=STEMS),
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",stem=STEMS)
 
@@ -157,7 +159,10 @@ rule test_pseudo_contigs:
     input:
         expand(tmp + "/16S_amplicons/contigs_sanitisation/{stem}_pseudocontigs.fasta",stem=STEMS),
         expand(tmp + "/KRAKEN/pseudocontigs_{stem}_kraken.txt",stem=STEMS),
-        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woNfq_fq2fa_woident_swarmD1.fasta",stem=STEMS)
+        #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woNfq_fq2fa_woident_swarmD1.fasta",stem=STEMS),
+        expand(tmp + "/16S_amplicons/R1clustering/{stem}_R1_prefix240_fq2fa_woident_swarmD2.fasta", stem=STEMS),
+        #expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woNfq_fq2fa_woident_swarmD1_blast_summary_genus.tsv",stem=STEMS),
+        expand(tmp + "/16S_amplicons/ClusterBasedDedup/{stem}_L001_R1_001_ini_merged_minlengthfq240_woNfq_fq2fa_woident_swarmD1.fasta",stem=STEMS),
 
 rule test_assembly_dev:
     input:

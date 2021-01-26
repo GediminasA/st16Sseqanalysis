@@ -60,7 +60,7 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
         '''
         set +e
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
-        scripts/julia.sh scripts/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
+        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
         seqkit grep -r -f {params.names} {input[1]} > {output[0]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -141,7 +141,7 @@ rule analyse_centroids_on_reference:
         ref = CONFIG["ref"],
         genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/chosen_clusters.csv"
     shell:'''
-        scripts/julia.sh scripts/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
+        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
         '''
 
 

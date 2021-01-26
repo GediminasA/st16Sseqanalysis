@@ -1,6 +1,27 @@
 #!/usr/bin/env python
 
-#repair raeds by overlapi
+rule correct_reads:
+    input:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001.fastq.gz"
+    output:
+        OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
+        OUT + "/16S_having_reads/{stem}_L001_R2_001_corrected.fastq.gz"
+    benchmark:
+        bench + "/assemble_{stem}.log"
+    params:
+        spades_dir = tmp + "/{stem}_correction",
+        r1cor = tmp + "/{stem}_correction/corrected/{stem}_L001_R1_001.fastq.00.0_0.cor.fastq.gz",
+        r2cor = tmp + "/{stem}_correction/corrected/{stem}_L001_R2_001.fastq.00.0_0.cor.fastq.gz"
+    threads:
+        CONFIG["MACHINE"]["threads_spades"]
+    shell:
+        "spades.py  --only-error-correction  " +  "  -1  {input[0]} -2  {input[1]} " +
+        "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
+        " scripts/repair.sh in={params.r1cor} out={output[0]} in2={params.r2cor} out2={output[1]} "
+
+
+
 rule retrim__adapters:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",

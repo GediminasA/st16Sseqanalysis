@@ -101,7 +101,7 @@ BBDUK:
     minlength: 250
     maxns: 0
     qtrim: r
-    trimq: 15
+    trimq: 20
     additional_params: "tpe tbo"
 
 ###############
@@ -118,7 +118,7 @@ SUBSAMPLING:
 DNA_GC:
     win_size: 100
 
-KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
+KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/bacteria_202011 
 BLAST_DB_contigs: /mnt/beegfs/Databases/BACTERIA/ATTC/final/attc_16S1500bp_final_wog.fasta 
 BLAST_DB_nt: /mnt/beegfs/Databases/nt/nt  
 #BLAST_DB: /mnt/beegfs/Databases/nt/nt  
@@ -127,6 +127,7 @@ BLAST_DB_nt: /mnt/beegfs/Databases/nt/nt
 DADA_DB: /media/root/ocean/shared/DADA2_tmp/silva_nr99_v138_train_set.fa.gz
 DADA_DB_species: /mnt/beegfs/Databases/DADA/GTDB_dada2_assignment_species.fa.gz 
 NCBI_CONTIGS: /mnt/beegfs/ga/testdb/16S.fasta
+NCBI_TAXDUMP: /mnt/beegfs/Databases/taxdump 
 #misc
 dt: r1 
 r1c: minsize1
