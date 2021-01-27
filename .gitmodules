@@ -1,4 +1,0 @@
-[submodule "scripts/julia_modules/SequenceAnalysisAndDesign"]
-	path = scripts/julia_modules/SequenceAnalysisAndDesign
-	url = git@github.com:thermofisher/SequenceAnalysisAndDesign.git
-	branch = chimeras
