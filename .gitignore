@@ -17,4 +17,5 @@ dependencies/**
 logs/
 logs/**
 datasets/testingdata/zymo_simulated_real_insert_distribution/Zymo1*
-
+datasets/testingdata/remote/
+testing/testingdata/calculated/
