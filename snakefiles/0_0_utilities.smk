@@ -205,7 +205,7 @@ def PolyAAnalysis_trimm_input(wildcards):
 
 
 def chose_deduplicated_or_not(wildcards):
-    umis = CONFIG["UMI_SAMPLES"].split()
+    umis = ["NO_UMIS_AT_THIS_POINT"]
 
     if wildcards.stem in umis:
         return([tmp + f"/16S_having_reads/{wildcards}_L001_R1_001_matchedadedup.fastq.gz",tmp + f"/16S_having_reads/{wildcards}_L001_R2_001_matchedadedup.fastq.gz"])

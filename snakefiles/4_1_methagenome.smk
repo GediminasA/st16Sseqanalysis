@@ -38,4 +38,4 @@ rule extract_species:
     params:
         s = "{stem}"
     shell:
-        "scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/parse_balst_on_zymostd.jl {input[0]} {input[1]}  {params.s}"
+        "scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/parse_balst_on_zymostd.jl {input[0]} {input[1]}  {params.s}"

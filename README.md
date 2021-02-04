@@ -41,37 +41,42 @@ please directly to the step 6 of the Workflow setup.
     source activate 16s4otdn
 ```
 
+6. Install and setup julia 1.5+, using comands like below :
+```bash
+    wget https://julialang-s3.julialang.org/bin/linux/x64/1.5/julia-1.5.2-linux-x86_64.tar.gz
+    tar -xvzf julia-1.5.2-linux-x86_64.tar.gz
+    sudo cp -r julia-1.5.2 /opt/
+    sudo ln -s /opt/julia-1.5.2/bin/julia /usr/local/bin/julia
+    rm julia-1.5.2-linux-x86_64.tar.gz
+```
+7. setup required julia environment :
+```bash
+   cd scripts/julia_modules/st16SseqJuliaTools
+   ./setup.sh 
+```
+
 6. Run the small scale analysis and a set of tests:
-The workflow uses an singularity image. Before running the tests or analyses you must indicate a mounting point for singularity. In other words you must indicate what lowest level directories can be accessed by the workflow. for the example below we allow workflow to access /mnt/beegfs directory.
+The workflow will download small versions of several databases. In the example below 12 threads are allowed to use.
 ```bash
     cd testing
-    ./run_tests.py --singularity-mount-point /mnt/beegfs
+    ./run_tests.py  --threads 12
 ```
 
 ## Example analysis
 
 * Run `snakemake` to extyract examplary raw files:
 ```bash
-   #Presume that 12 threads are available (option -j 12) and you allow to accsess /mnt/beegfs
-   #Prepare the testing dataset:
-   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j 12  extract_testing_file
+   #Presume that 12 threads are available (option -j 12). 
+   #Prepare the example dataset:
+    snakemake --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j 12  extract_testing_file
 ```
 * Run `snakemake` to perform analysis itself:
 ```bash
-   #Presume that 12 threads are available (option -j 12) and you allow to accsess /mnt/beegfs
-   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --configfile configs/example.yaml -j 12 --use-conda --conda-frontend mamba 
-   # An example with cluster
-   export SINGULARITY_BINDPATH="/mnt/beegfs" ; snakemake --configfile configs/example.yaml --use-conda --conda-frontend mamba --cluster "qsub -V -pe smp {threads} -N {cluster.name} -p {cluster.priority} -e {cluster.error} -o {cluster.output} -cwd" -j 96 --cluster-config cluster.json  
+   #Presume that 12 threads are available (option -j 12)
+   snakemake --configfile configs/example.yaml -j 12 --use-conda --conda-frontend mamba 
 ```
 
 This would run an analysis on a small dataset matching simulated data matching Zymo standard (https://www.zymoresearch.com/collections/zymobiomics-microbial-community-standards/products/zymobiomics-microbial-community-dna-standard). 
-The workflow is under intensive development  - expected output files are changing constantly.
-
-## Notes for developers:
-1. The workflow would automatically download the required singularity container. However due to overhead of inner snakemake handling and bugs in snakemake preventing usage of conda and singularity at the same time the singularity was used directly. Therefore the snakemake guidelines for singularity usage do not apply.
-2. The files for further development:
-out/16S_having_reads/*mergd.fastq.gz - the cleaned up trimmed 16S reads
-3. some used programs are non deterministic without ability to use set  random seed. This complicatesintegration tests.
-
+To run analysis on a real dataset please create a configuration file following the `testing/testing.yaml` example and comments within this file.
 
 

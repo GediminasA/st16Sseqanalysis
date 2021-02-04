@@ -13,7 +13,7 @@ checkpoint group_reads_by_first250bp:
         minsizefrac = 0.001,
     shell:
         '''
-        scripts/julia.sh  scripts/julia_modules/SequenceAnalysisAndDesign/extract_good_clusters.jl  -a {input.cl1}.gjc -b  {input.cl2}.jc -m {params.minsizefrac} -t {input.dada_cl1} -f {input.cl1}  -d {output.dir}
+        scripts/julia.sh  scripts/julia_modules/st16SseqJuliaTools/tools/extract_good_clusters.jl  -a {input.cl1}.gjc -b  {input.cl2}.jc -m {params.minsizefrac} -t {input.dada_cl1} -f {input.cl1}  -d {output.dir}
          '''
 
 rule copy_4_clustering:
@@ -165,8 +165,10 @@ rule merge_clustered_reads:
 
 rule fuse_clustered_reads:
     input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_final.fastq.gz",
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_final.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_4premerge.fastq.gz",
+        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_4premerge.fastq.gz",
+        #tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_final.fastq.gz",
+        #tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_final.fastq.gz",
         #tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1.fastq",
         #tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed.fastq"
     output:
@@ -275,7 +277,7 @@ rule get_pseudo_contigs:
     shell:
         " cat {input} > {output} "
 
-rule run_kraken_on_fused:
+rule run_kraken_on_pseudo:
     input:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_pseudocontigs.fasta"
     output:
@@ -288,6 +290,19 @@ rule run_kraken_on_fused:
     shell:
         "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input[0]} {input[0]}  "
 
+
+rule run_kraken_on_fused:
+    input:
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast_wocontained_fused.fasta",
+    output:
+        tmp + "/KRAKEN/fused_{stem}_kraken.txt",
+        tmp + "/KRAKEN/fused_{stem}_kraken_raport.txt"
+    threads: CONFIG["MACHINE"]["threads_kraken"]
+    conda: "../envs/metagenome.yaml"
+    params:
+        db = CONFIG["KRAKEN_DB"]
+    shell:
+        "kraken2 --use-names --paired  --report {output[1]} --threads {threads} --db {params.db} --output {output[0]} {input[0]} {input[0]}  "
 
 
 rule remove_primer_sequences_from_R1_and_copy_R2_16S:
@@ -376,7 +391,7 @@ rule filterout_r1primer_sequence_having_reads_on16S:
     benchmark:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
-        "scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
+        "scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
 
 
 

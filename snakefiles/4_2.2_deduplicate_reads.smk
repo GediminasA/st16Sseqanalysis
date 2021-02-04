@@ -218,39 +218,6 @@ rule get_pseudoamplicon:
             seqkit seq --reverse --complement {output[0]} -o {output[1]}
         '''
 
-
-
-
-
-
-#CHECK deduplication
-
-rule map_prededup_reads_on_ref:
-    input:
-        CONFIG["ref"],
-        CONFIG["ref"] + ".rev.2.bt2",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_prededup_all.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_prededup_all.fastq.gz",
-    output:
-        tmp + "/QC/{stem}_prededup.bam"
-    threads: CONFIG["MACHINE"]["threads_bwa"]
-    shell:'''
-    bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort  > {output}
-    '''
-
-rule map_dedup_reads_on_ref:
-    input:
-        CONFIG["ref"],
-        CONFIG["ref"] + ".rev.2.bt2",
-        OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_all.fastq.gz",
-        OUT + "/16S_having_reads/{stem}_L001_R2_001_dedup_all.fastq.gz",
-    output:
-        tmp + "/QC/{stem}_dedup.bam"
-    threads: CONFIG["MACHINE"]["threads_bwa"]
-    shell:'''
-    bowtie2  -X 2000   --very-fast   -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort  > {output}
-    '''
-
 rule extract_R2_4insertsize:
     input:
         "{stem}.bam",

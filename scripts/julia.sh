@@ -1,1 +1,1 @@
-julia --project=scripts/julia_modules/SequenceAnalysisAndDesign $*
+julia --project=scripts/julia_modules/st16SseqJuliaTools $*

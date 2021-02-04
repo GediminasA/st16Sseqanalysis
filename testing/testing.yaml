@@ -9,7 +9,7 @@
 #############################################################
 
 SAMPLES:  Zymo10.1Sim 
-INPUT-DIR: datasets/testingdata/zymo_simulated_real_insert_distribution
+INPUT-DIR: datasets/testingdata/remote/zymo_simulated_real_insert_distribution
 UMI_SAMPLES:  "S9000"
 LANE-REGEX: "L\\d\\d\\d_"
 TMP-DIR: testing/testingdata/calculated/tmp
@@ -32,7 +32,7 @@ PRIMERS:
 #Parameters for filterin out 16S havving reads
 16S:
     hmm_reads:
-        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
+        model: datasets/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
         e: 1000
         ts: 600
         te: 1000
@@ -40,21 +40,7 @@ PRIMERS:
         re: 350
         length: 200 #match length in read
         max_R2_fraction: 0.3
-    hmm_contigs:
-        model: /mnt/beegfs/Databases/SILVA/SILVA_132_SSURef_Nr99_tax_silva_full_align_trunc_bacteria_0.95_nd_dn.hmm
-        e: 1000
-        ts: 550
-        te: 990
-        rs: 1
-        re: 560
-        length: 301  #match length in read
-        max_R2_fraction: 0.3
 
-min_contig_length: 400
-max_contig_length: 12000000000
-clustering_frac: 0.97
-ref:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
-ref4picard:  /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic_simple_names.fasta
 #########################
 # CPU and memory params #
 #########################
@@ -73,13 +59,6 @@ MACHINE:
     threads_swarm: 4
     threads_dada: 8
 
-##############
-# References #
-##############
-REFERENCE: datasets/small_dataset/references/GRCh38.primary_assembly.chr21_reduced.fa
-TRANSCRIPTS:
-GFF3: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gff3
-GTF: datasets/small_dataset/references/gencode.v28.primary_assembly.annotation_chr21_reduced.gtf
 ###################
 # Fastqc options. #
 ###################
@@ -111,17 +90,11 @@ SUBSAMPLING:
     subsample_to:
 
 ###############
-# QC          #
+# Databases   #
 ###############
-DNA_GC:
-    win_size: 100
-
-KRAKEN_DB: /mnt/beegfs/Databases/KRAKEN/standard_0124 
-BLAST_DB: /mnt/beegfs/Databases/BACTERIA/ZYMO_provided/rRNA_ampl_1500Genomic.fasta
-#DADA_DB: /mnt/beegfs/Databases/DADA/SILVA_SSU_r138_2019.RData
-DADA_DB: /mnt/beegfs/Databases/DADA/silva_nr_v138_train_set.fa.gz
-#misc
-dt: r1 
-r1c: minsize1
-r2c: minsize1
+KRAKEN_DB: datasets/testingdata/remote/kraken/bacteria_202011min 
+DADA_DB: datasets/testingdata/remote/dada2/RefSeq-RDP16S_v2_May2018.fa.gz 
+DADA_DB_species:  datasets/testingdata/remote/dada2/RefSeq-RDP_dada2_assignment_species.fa.gz  
+BLAST_DB_contigs: datasets/testingdata/expected_contigs/zymo_expected_contigs.fa
+BLAST_DB_nt: datasets/testingdata/remote/ntsmall/zymo  
 

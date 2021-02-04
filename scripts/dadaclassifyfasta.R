@@ -1,6 +1,7 @@
 library(dada2); packageVersion("dada2")
 library(DECIPHER);
 packageVersion("dada2");
+set.seed(100)
 dbin <- snakemake@params[["db"]]
 dbin_species <- snakemake@params[["db_species"]]
 dfiltered <- snakemake@params[["dada_filt"]]
@@ -44,4 +45,4 @@ taxid.plus <- addSpecies(taxid,dbin_species, verbose=TRUE,allowMultiple=TRUE)
 
 }
 row.names(taxid.plus) <- seqnames
-write.table(taxid.plus, output_tax_table)
+write.table(taxid.plus, output_tax_table,sep="\t")

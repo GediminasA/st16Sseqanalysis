@@ -276,7 +276,7 @@ rule rmidenti:
         '''
         set +e
         vsearch    --derep_fulllength   {input}    --sizeout   --fasta_width 0  --output {output[0]} --uc {params.uc}
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uc} > {output[1]}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uc} > {output[1]}
         cp {output[1]}  {output[2]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -304,7 +304,7 @@ rule gefast:
         echo "threshold=1" >> {params.conf}
         GeFaST {input[0]}  -t 1 -sf --swarm-fastidious-threshold 1 --use-score  --swarm-uclust {params.uc}   --sep-abundance   ";size="  -sw {output[0]}
         #dependencies/GeFaST as {input} {params.conf}  -u {params.uc} -w {output[0]} - --sep_abundance  ";size=" -t 1 -r 1
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uc} > {output[1]}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uc} > {output[1]}
         cp {output[1]}  {output[2]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -354,11 +354,11 @@ rule cluster_with_swarm:
         swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo swarm  $fp  -z  {input} -d {params.d} -l {output.log} -o {output.out} -w {output} -u {params.uco} -t {threads}
         echo "Creating file: " {params.jco}
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uco} > {params.jco}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -389,11 +389,11 @@ rule cluster_with_vsize:
         set +e
         vsearch     --cluster_size   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uco} > {params.jco}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -425,11 +425,11 @@ rule cluster_with_vlength:
         set +e
         vsearch     --cluster_fast   {input}  --id 0.{params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uco} > {params.jco}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi
@@ -498,11 +498,11 @@ rule cluster_with_unoise:
     shell:'''
         vsearch     --cluster_unoise   {input}  --minsize  {params.d} --uc {params.uco} --sizeout  --sizein     --fasta_width 0     --centroids {output}
         echo "Creating file: " {params.jco}
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/uc2jc.jl {params.uco} > {params.jco}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/uc2jc.jl {params.uco} > {params.jco}
         if [ -f {params.gjci} ] ; then
             echo "Previous clusterings' jc file found - merging two clusterings...."
             echo combining {params.gjci}  {params.jco} into {params.gjco}
-            scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
+            scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/mergejc.jl {params.gjci}  {params.jco} > {params.gjco}
         else
             echo "Previous clusterings' jc was not  found - NOT merging two clusterings...."
         fi

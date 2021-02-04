@@ -60,7 +60,7 @@ rule remove_artefactuoal_sequences: #leave only the largest cluster and remove t
         '''
         set +e
         sort --parallel={threads} -t  $'\t' -k 2 {input[0]}.gjc > {input[0]}.gjc.sorted
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/get_largest_cluster.jl {input[0]}.gjc.sorted > {params.names}
         seqkit grep -r -f {params.names} {input[1]} > {output[0]}
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -82,7 +82,7 @@ rule remove_conatined_and_short:
         length = 0.52 #smaller contigs will be discarded
     shell:
         '''
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/extract_proper_length_contig.jl \
+        scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/extract_proper_length_contig.jl \
         -i {input} -o {output} \
         -e {params.length} -d {params.ident} -v {params.coverage} \
         --filter-length --remove-contained
@@ -90,59 +90,6 @@ rule remove_conatined_and_short:
         #--filter-length  --remove-contained
         #--filter-length  --remove-contained
         #'''
-
-
-
-# mapping on reference
-rule map_centroid_on_ref:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_onref.bam"
-    params:
-        ref = CONFIG["ref"]
-    threads:
-        CONFIG["MACHINE"]["threads_bwa"]
-    shell:
-        "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
-
-rule map_centroid_on_ref_r1:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R1_fqnotgz2fa_clusterL99.fasta",
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_R1_onref.bam"
-    params:
-        ref = CONFIG["ref"]
-    threads:
-        CONFIG["MACHINE"]["threads_bwa"]
-    shell:
-        "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
-
-rule map_centroid_on_ref_r2:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_endtrimmed_fqnotgz2fa_clusterL99.fasta"
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_R2_onref.bam"
-    params:
-        ref = CONFIG["ref"]
-    threads:
-        CONFIG["MACHINE"]["threads_bwa"]
-    shell:
-        "bowtie2 -f  -x {params.ref} -U {input} | samtools view -b | samtools sort  > {output} ; samtools index {output}"
-
-rule analyse_centroids_on_reference:
-    input:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_onref.bam",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1.fasta",
-    output:
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta",
-        tmp + "/16S_amplicons/R1clustering/{stem}_assemblies/{id}_centroids_clean1_refbasedclean.fasta.info.csv",
-    params:
-        ref = CONFIG["ref"],
-        genusdata = tmp + "/16S_amplicons/R1clustering/{stem}_clusters/chosen_clusters.csv"
-    shell:'''
-        scripts/julia.sh scripts/julia_modules/SequenceAnalysisAndDesign/analyse_alignment_on_reference_extract_matches.jl -r {params.ref} -i {input[0]} -c {input[1]} -g {params.genusdata} -o {output[0]}
-        '''
 
 
 rule create_bowtie2_index:

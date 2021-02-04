@@ -43,12 +43,10 @@ rule analyse_blast_centroid_on_nt:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_onncbi.xml2",
     output:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast.fasta",
-    params:
-        db = CONFIG["NCBI_TAXDUMP"]
     threads:
         CONFIG["MACHINE"]["threads_julia"]
     shell:
-       " scripts/julia.sh --threads={threads}  scripts/julia_modules/SequenceAnalysisAndDesign/analyse_blast.jl  -d {params.db} -x {input[1]} -r {input[0]} -o {output} "
+       " scripts/julia.sh --threads={threads}  scripts/julia_modules/st16SseqJuliaTools/tools/analyse_blast.jl   -x {input[1]} -r {input[0]} -o {output} "
 
 rule quantify_contigs_4_cleaning:
     input:
@@ -68,10 +66,11 @@ rule remove_contained:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_mergedaln_salmon.csv",
     output:
         tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast_wocontained.fasta",
+        tmp + "/16S_amplicons/contigs_sanitisation/{stem}_contigs_clean1_blast_wocontained_fused.fasta",
     threads:
         CONFIG["MACHINE"]["threads_julia"]
     shell:
-        " scripts/julia.sh --threads={threads}  scripts/julia_modules/SequenceAnalysisAndDesign/analyse_selfaln_checkcontained.jl -s {input[1]}  -r  {input[0]}   -o {output[0]} "
+        " scripts/julia.sh --threads={threads}  scripts/julia_modules/st16SseqJuliaTools/tools/analyse_selfaln_checkcontained.jl -s {input[1]}  -r  {input[0]}   -o {output[0]} -f {output[1]} "
 
 
 rule get_ref_cleaned_contigs:
