@@ -82,12 +82,6 @@ pipeline {
                             conda install -c conda-forge mamba
                             mamba env create -p $ENV_PATH -f envs/main.yaml
                         '''
-                    },
-                    "GitSub": {
-                        sh '''#!/usr/bin/env bash
-                            git submodule update --init --recursive
-                            mkdir -p ./logs
-                        '''
                     }
                 )
             }
