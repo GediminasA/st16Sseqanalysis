@@ -138,44 +138,12 @@ pipeline {
         }
     }
     post {
-        failure {
-            sh """#!/usr/bin/env bash
-                cp logs ../tests_logs/FAILED_${DATE_TAG} -r
-                cp testing/cov_*.log testing/LEFT_RULES testing/ALL_RULES testing/USED_RULES ../tests_logs/FAILED_${DATE_TAG}/
-                cp testing/testingdata/calculated._run_log.txt ../tests_logs/FAILED_${DATE_TAG}/
-                cp testing/testing_res.txt ../tests_logs/FAILED_${DATE_TAG}/
-                cp smk-cov.xml julia_cov.xml julia_cov.info ../tests_logs/FAILED_${DATE_TAG}/
-                tar -zcvf ../tests_logs/FAILED_${DATE_TAG}.tar.gz ../tests_logs/FAILED_${DATE_TAG}/
-                rm ../tests_logs/FAILED_${DATE_TAG} -r
-            """
-        }
-        success{
-            sh """#!/usr/bin/env bash
-                cp logs ../tests_logs/SUCCESSFUL_${DATE_TAG} -r
-                cp testing/cov_*.log testing/LEFT_RULES testing/ALL_RULES testing/USED_RULES ../tests_logs/SUCCESSFUL_${DATE_TAG}/
-                cp testing/testingdata/calculated._run_log.txt ../tests_logs/SUCCESSFUL_${DATE_TAG}/
-                cp smk-cov.xml ../tests_logs/SUCCESSFUL_${DATE_TAG}/
-                cp testing/testing_res.txt ../tests_logs/SUCCESSFUL_${DATE_TAG}/
-                tar -zcvf ../tests_logs/SUCCESSFUL_${DATE_TAG}.tar.gz ../tests_logs/SUCCESSFUL_${DATE_TAG}/
-                rm ../tests_logs/SUCCESSFUL_${DATE_TAG} -r
-            """
-        }
         cleanup{
             sh """#!/usr/bin/env bash
                 rm $ENV_PATH -r
                 rm $ENV_PATH_J -r
                 rm $JULIA_DIR -r
                 rm $MINI_PATH -r
-                rm testing/testingdata/calculated._run_log.txt
-                rm testing/testingdata/reference -r
-                rm testing/testingdata/calculated -r
-                rm testing/testing_res.txt
-                rm logs -r
-                rm testing/cov_*.log
-                rm testing/LEFT_RULES
-                rm testing/ALL_RULES
-                rm testing/USED_RULES
-                rm smk-cov.xml
             """
         }
     }
