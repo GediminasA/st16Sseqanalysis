@@ -180,5 +180,5 @@ else:
 print(f"Summary written to: {args.testing_result}")
 f_res.close()
 
-if not ok:
+if not ok and not args.jenkins_cov:
     sys.exit(5)
