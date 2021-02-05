@@ -5,7 +5,7 @@ def COUNT_FAIL = ''
 def COUNT_TOTAL = ''
 def COUNT_MAIN_FAIL = ''
 def DATE_TAG = java.time.LocalDateTime.now()
-def MAIN_DIR = "/mnt/jenkins/JULIA_st16SseqAnalysis"
+def MAIN_DIR = "/mnt/jenkins/st16SseqAnalysis"
 echo "RUNNING WITH PARAMS: ${params.WITH_PARAMS}"
 def BRANCH = ""
 
@@ -21,7 +21,7 @@ pipeline {
     agent {
         node {
             label 'master'
-            customWorkspace "${MAIN_DIR}/st16SseqJuliaTools_$BRANCH"
+            customWorkspace "${MAIN_DIR}/st16SseqAnalysis_$BRANCH"
         }
     }
     environment {
