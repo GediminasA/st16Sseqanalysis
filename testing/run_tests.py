@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, os, colorama, filecmp
+import argparse, os, colorama, filecmp, sys
 from colorama import Fore
 colorama.init()
 def compare_with_reference(test, calc):
