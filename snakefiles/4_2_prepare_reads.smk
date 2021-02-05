@@ -20,8 +20,6 @@ rule correct_reads:
         "   -t {threads}   -o {params.spades_dir} --tmp-dir "+scratch+"; " +
         " scripts/repair.sh in={params.r1cor} out={output[0]} in2={params.r2cor} out2={output[1]} "
 
-
-
 rule retrim__adapters:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_corrected.fastq.gz",
@@ -48,7 +46,6 @@ rule retrim__adapters:
                 "tpe tbo threads={threads} " +
                 " overwrite=t "
 
-
 rule repair_reads_by_overlap_step1_merge:
     input:
         tmp + "/16S_having_reads/{stem}_L001_R1_001_corrected_retr.fastq.gz",
@@ -63,9 +60,6 @@ rule repair_reads_by_overlap_step1_merge:
         "bbmerge.sh in1={input[0]} in2={input[1]} " +
                 "outu1={output[0]} outu2={output[1]} " +
                 "out={output[2]} strict=t threads={threads} "
-
-
-
 
 rule get_r2_of_merged:
     input:
@@ -83,8 +77,6 @@ rule get_bothr1:
         tmp + "/16S_having_reads/{stem}_L001_R1_001_corrected_merwun.fastq.gz",
     shell:
         " cat {input} > {output} "
-
-
 
 rule retrim_primer_seqR1:
     input:
@@ -104,7 +96,6 @@ rule retrim_primer_seqR1:
                  overwrite=t \
                 '''
 
-
 rule get_bothr2:
     input:
         tmp + "/16S_having_reads/{stem}_L001_R2_001_corrected_merc.fastq.gz",
@@ -112,8 +103,7 @@ rule get_bothr2:
     output:
         tmp + "/16S_having_reads/{stem}_L001_R2_001_corrected_merwun.fastq.gz",
     shell:
-        " cat {input} > {output} "
-
+        "cat {input} > {output} "
 
 rule get_repaired:
     input:
@@ -127,7 +117,4 @@ rule get_repaired:
     shell:
         "scripts/repair.sh in1={input[0]} in2={input[1]} " +
         "out1={output[0]} out2={output[1]} ow=t "
-
-
-
 

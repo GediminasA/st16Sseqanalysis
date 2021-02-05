@@ -39,7 +39,6 @@ rule trim_adapters:
                 "stats={output[0]} overwrite=t " +
                 "-Xmx{params.m}g 2> {log}"
 
-
 # ------------------------ Subsampling -------------------------------------- #
 
 if CONFIG["SUBSAMPLING"]["subsample_to"]:
@@ -141,7 +140,6 @@ else:
                     ln  {input[1]} {output[1]}
                 """
 
-
 # Various utilities 4 clustering
 
 rule get_prefix:
@@ -242,8 +240,6 @@ rule deupumi:
     shell:
         "  java -server -Xms8G -Xmx8G -Xss20M -jar dependencies/UMICollapse_fastq/test.jar fastq -i {input} -o {output} "
 
-
-
 rule fqgz_to_fasta4tmp:
     input:
         tmp + "/16S_amplicons/ClusterBasedDedup/{stem}.fastq.gz",
@@ -261,7 +257,6 @@ rule fqgz_to_fasta4out:
     threads: 8
     shell:
         "seqkit fq2fa -w0 {input} -o {output} "
-
 
 rule rmidenti:
     input:
@@ -406,7 +401,6 @@ rule cluster_with_vsize:
         fi
         '''
 
-
 rule cluster_with_vlength:
     input:
         "{stem}.fasta",
@@ -442,7 +436,6 @@ rule cluster_with_vlength:
         fi
         '''
 
-
 rule removesinglets:
     input:
         "{stem}.fasta",
@@ -450,8 +443,6 @@ rule removesinglets:
         "{stem}_wosinglets.fasta",
     shell:
         "vsearch    --fastx_filter  {input}   --minsize 2   --sizein   --sizeout     --fasta_width 0  --fastaout {output} "
-
-
 
 rule remove_small_clusters:
     input:
@@ -480,7 +471,6 @@ rule remove_small_clusters:
         fi
         '''
 
-
 rule cluster_with_unoise:
     input:
         "{stem}.fasta",
@@ -508,8 +498,6 @@ rule cluster_with_unoise:
         fi
         '''
 
-
-
 rule fastq_to_fasta:
     input:
         "{stem}.fastq"
@@ -525,5 +513,4 @@ rule fastqgz_to_fasta:
         "{stem}_fq2fa.fasta"
     shell:
         "seqkit fq2fa {input} -o {output}"
-
 

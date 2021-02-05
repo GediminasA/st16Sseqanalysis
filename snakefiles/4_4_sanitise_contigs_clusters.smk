@@ -44,9 +44,7 @@ rule get_230_prefix:
         else
             exit 0
         fi
-
         '''
-
 
 rule remove_artefactuoal_sequences: #leave only the largest cluster and remove the artifactual "first part sequences"
     input:
@@ -91,7 +89,6 @@ rule remove_conatined_and_short:
         #--filter-length  --remove-contained
         #'''
 
-
 rule create_bowtie2_index:
     input:
         "{stem}.fasta"
@@ -112,7 +109,6 @@ rule map_reads_on_contigs:
     shell:'''
     bowtie2  -X 2000   --very-fast     -p {threads} -x {input[0]} -1  {input[2]} -2  {input[3]} | samtools view -b | samtools sort -n  > {output}
     '''
-
 
 rule get_salmon_index4centroids:
     input:
