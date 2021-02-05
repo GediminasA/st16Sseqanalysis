@@ -179,3 +179,6 @@ else:
             print(f"\t check {g}.diff",file=f_res)
 print(f"Summary written to: {args.testing_result}")
 f_res.close()
+
+if not ok:
+    sys.exit(5)
