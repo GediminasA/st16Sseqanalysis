@@ -356,7 +356,6 @@ rule match_pairs_after_filtering:
                 " threads={threads} " +
                 "-Xmx{params.m}g &> {log}"
 
-
 rule detect_16S_by_hmm_fastq:
     input:
         tmp + "/{stem}_R1_001filtered.fastq.gz"
@@ -369,7 +368,6 @@ rule detect_16S_by_hmm_fastq:
         THREADS
     shell:
         "nhmmer  --cpu {threads}  -E {params.e}  --noali --tblout {output} -o /dev/null {params.hmm} <( seqkit fq2fa  {input})"
-
 
 rule filterout_r1primer_sequence_having_reads_on16S:
     input:
@@ -392,8 +390,6 @@ rule filterout_r1primer_sequence_having_reads_on16S:
         BENCHMARKS + "/filteringR1_16S_{stem}.log"
     shell:
         "scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/extract_properly_matching_rRNA_names.jl -i {input[1]} -q {input[0]} -r {params.rs}:{params.re} -t {params.ts}:{params.te} -m {params.length}  -n {output[0]} -l {output[1]} -o {output[2]} "
-
-
 
 rule retrim_R2_adapters_from_primers:
     input:
@@ -430,11 +426,6 @@ rule retrim_R2_adapters_from_primers:
                 "stats={output[0]} overwrite=t " +
                 "-Xmx{params.m}g 2> {log}"
 
-
-
-
-
-
 rule filterout_r2primer_sequence_having_reads:
     input:
         tmp + "/{stem}_R2_001filtered.fastq.gz"
@@ -458,8 +449,6 @@ rule filterout_r2primer_sequence_having_reads:
                 " threads={threads} " +
                 "stats={output[0]} overwrite=t " +
                 "-Xmx{params.m}g 2> {log}"
-
-
 
 rule prefilter_primer_sequence_having_reads: # filter reads ghaving the desired primer
     input:
@@ -489,7 +478,6 @@ rule prefilter_primer_sequence_having_reads: # filter reads ghaving the desired 
                 " threads={threads} " +
                 "stats={output[0]} overwrite=t " +
                 "-Xmx{params.m}g 2> {log}"
-
 
 rule filter_primer_sequence_having_reads: # discarding R2 primer having reads
     input:

@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
-S3 = S3RemoteProvider()
+from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
+HTTP = HTTPRemoteProvider()
 
 rule extract_testing_file:
     input:
-        S3.remote("st16s-repo-bigfiles/sampleinput/Zymo10.1Sim_S1_L001_R1_001.fastq.gz"),
-        S3.remote("st16s-repo-bigfiles/sampleinput/Zymo10.1Sim_S1_L001_R2_001.fastq.gz"),
-        S3.remote("st16s-repo-bigfiles/dada2-tiny-db/RefSeq-RDP16S_v2_May2018.tar.gz"),
-        S3.remote("st16s-repo-bigfiles/dada2-tiny-db/RefSeq-RDP_dada2_assignment_species.tar.gz"),
-        S3.remote("st16s-repo-bigfiles/tiny-nt-zymo/ntsmall.tar.gz"),
-        S3.remote("st16s-repo-bigfiles/kraken2-tiny-bacterial/bacteriamin_202011_0.05G.tar.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/sampleinput/Zymo10.1Sim_S1_L001_R1_001.fastq.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/sampleinput/Zymo10.1Sim_S1_L001_R2_001.fastq.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/dada2-tiny-db/RefSeq-RDP16S_v2_May2018.tar.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/dada2-tiny-db/RefSeq-RDP_dada2_assignment_species.tar.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/tiny-nt-zymo/ntsmall.tar.gz"),
+        HTTP.remote("st16s-repo-bigfiles.s3.eu-central-1.amazonaws.com/kraken2-tiny-bacterial/bacteriamin_202011_0.05G.tar.gz"),
     output:
         "datasets/testingdata/remote/zymo_simulated_real_insert_distribution/Zymo10.1Sim_S1_L001_R1_001.fastq.gz",
         "datasets/testingdata/remote/zymo_simulated_real_insert_distribution/Zymo10.1Sim_S1_L001_R2_001.fastq.gz",
@@ -30,8 +30,6 @@ rule extract_testing_file:
         tar xzf {input[4]}  --directory {params.ntdir}
         tar xzf {input[5]}  --directory {params.krakendir}
         '''
-
-
 
 rule extract_testing_file_ini:
     input:

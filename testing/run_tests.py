@@ -128,7 +128,7 @@ if run_calcualtions:
     print("Starting testing run")
     run_log = calc1+"._run_log.txt"
     print(f"\t...log could be checked here: {run_log}")
-    os.system(f" cd ../ ;  snakemake  main  --nolock  --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads}     >testing/{run_log} 2>&1  ")
+    os.system(f" cd ../ ; snakemake main --nolock --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads} --nt > testing/{run_log} 2>&1")
 
 print("TESTING GENERATED FILES WITH EXPECTED. SET#1")
 ok,missing,different=compare_with_reference(test1_refs,calc1)
@@ -154,6 +154,3 @@ else:
             print(f"\t check {g}.diff",file=f_res)
 print(f"Summary written to: {args.testing_result}")
 f_res.close()
-
-
-

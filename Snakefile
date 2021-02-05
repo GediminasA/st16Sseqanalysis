@@ -7,16 +7,7 @@ import re
 import sys
 import yaml
 from shutil import copyfile
-# Check singularity SINGULARITY_BINDPATH value
-#if not  os.path.exists("singularity/julia.sif"):
-#    print("The required singularity container is not available.\n Please read README, its beeing downloaded ...")
-#    if not  os.path.exists("singularity"):
-#        os.mkdir("singularity")
-#    os.system("singularity build  singularity/julia.sif docker://galzbutas/julia4bioinformatics")
-#if not "SINGULARITY_BINDPATH" in os.environ.keys():
-#    raise Exception("Any directory fo singularity binding is not define.\n Please read README and define an enviromental variable SINGULARITY_BINDPATH ")
-#else:
- #   print("The following directories will be bind to a singularity container (SINGULARITY_BINDPATH): ",os.environ["SINGULARITY_BINDPATH"])
+
 # ------------------------------ Include Snakefiles ------------------------- #
 include: "./snakefiles/0_0_utilities.smk"
 include: "./snakefiles/0_1_configuration.smk"
@@ -50,8 +41,6 @@ rule main:
         LOGS + "/GIT-LOG/commit_used.log",
         LOGS + "/config.yaml"
 
-
-
 rule integrate:
    input:
         tmp + "/KRAKEN/pseudocontigs_{stem}_kraken.txt",
@@ -66,6 +55,7 @@ rule integrate:
         """
         scripts/julia.sh scripts/julia_modules/st16SseqJuliaTools/tools/integrate.jl -k {input[0]} -d {input[2]}.gjc -a {input[1]}.gjc -l {params.label} -f {input[3]}
         """
+
 rule copy_genus_quantification:
     input:
         OUT + "/16S_having_reads/{stem}_L001_R1_001_dedup_mergd_woident_blast_summary_genus.tsv"
@@ -73,7 +63,6 @@ rule copy_genus_quantification:
         OUT + "/{stem}_counts_per_genus.tsv"
     shell:
         "cp {input} {output}"
-
 
 # ------------------------ Save run conf  ----------------------------------- #
 rule git_log:
@@ -88,3 +77,4 @@ rule write_config:
     run:
         with open(LOGS + "/config.yaml", 'w') as outfile:
             yaml.dump(CONFIG, outfile, default_flow_style=False)
+

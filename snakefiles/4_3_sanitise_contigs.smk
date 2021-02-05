@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-
-
 rule get_contigs_for_cleanup:
     input:
         aggregate_ref_cleaned1
@@ -70,8 +68,7 @@ rule remove_contained:
     threads:
         CONFIG["MACHINE"]["threads_julia"]
     shell:
-        " scripts/julia.sh --threads={threads}  scripts/julia_modules/st16SseqJuliaTools/tools/analyse_selfaln_checkcontained.jl -s {input[1]}  -r  {input[0]}   -o {output[0]} -f {output[1]} "
-
+        "scripts/julia.sh --threads={threads} scripts/julia_modules/st16SseqJuliaTools/tools/analyse_selfaln_checkcontained.jl -s {input[1]} -r {input[0]} -o {output[0]} -f {output[1]}"
 
 rule get_ref_cleaned_contigs:
     input:

@@ -28,6 +28,7 @@ rule run_blast:
     blastn -db {params.db} -query {input} -num_threads {threads} -max_hsps 1 -max_target_seqs 1 \
     -outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen" > {output}
     '''
+
 rule extract_species:
     input:
         "{stem}_blast.csv",
