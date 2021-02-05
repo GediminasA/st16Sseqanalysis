@@ -144,6 +144,15 @@ pipeline {
                 rm $ENV_PATH_J -r
                 rm $JULIA_DIR -r
                 rm $MINI_PATH -r
+                rm testing/testingdata/calculated._run_log.txt
+                rm testing/testingdata/reference -r
+                rm testing/testingdata/calculated -r
+                rm testing/testing_res.txt
+                rm testing/cov_*.log
+                rm testing/LEFT_RULES
+                rm testing/ALL_RULES
+                rm testing/USED_RULES
+                rm smk-cov.xml
             """
         }
     }
