@@ -19,3 +19,7 @@ logs/**
 datasets/testingdata/zymo_simulated_real_insert_distribution/Zymo1*
 datasets/testingdata/remote/
 testing/testingdata/calculated/
+testing/testing_res.txt
+testing/testingdata/reference/out
+testing/testingdata/reference/tmp
+testing/testingdata/calculated._run_log.txt
