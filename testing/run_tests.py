@@ -25,7 +25,6 @@ def compare_with_reference(test, calc):
         cal_f = fr.replace(test,calc)
         #print(cal_f)
         fail_ok = True
-        cluster_data = False # specific traeatment
         comp = True
         if os.path.exists(cal_f):
             # some files randomly changes and some modifications must be done
@@ -35,13 +34,23 @@ def compare_with_reference(test, calc):
             os.system(f" cp {ref_f} {ref_f_proc} ; cp {cal_f} {cal_f_proc} ")
             if ref_f.find("contigs.csv") > -1:
                 #remove first column - whole output can different by random
-                os.system(f'''cut -d"," -f2- {ref_f} | sort > {ref_f_proc}''')
-                os.system(f'''cut -d"," -f2- {cal_f} | sort > {cal_f_proc}''')
+                os.system(f'''cut -d"," -f2 {ref_f}  > {ref_f_proc}''')
+                os.system(f'''cut -d"," -f2 {cal_f}  > {cal_f_proc}''')
+                f1 = open(ref_f_proc,"r")
+                ls1 = list(f1.readlines()[1:])
+                f2 = open(cal_f_proc,"r")
+                ls2 = list(f2.readlines()[1:])
+                ls1.sort()
+                ls2.sort()
+                for i in range(len(ls1)):
+                    v1 = float(ls1[i].replace("\n",""))
+                    v2 = float(ls2[i].replace("\n",""))
+                    if abs(v1-v2) > 2 :
+                        comp = False
             elif ref_f.find("chosen_clusters.csv") > -1:
                 #choose a particular column - whole output can be different by random
                 os.system(f'''cut -d"," -f5 {ref_f}  > {ref_f_proc}''')
                 os.system(f'''cut -d"," -f5 {cal_f}  > {cal_f_proc}''')
-                cluster_data = True
                 f1 = open(ref_f_proc,"r")
                 ls1 = list(map(int,f1.readlines()[1:]))
                 f2 = open(cal_f_proc,"r")
@@ -55,7 +64,6 @@ def compare_with_reference(test, calc):
                 #choose a particular column - whole output can be different by random
                 os.system(f'''cut -d"," -f4 {ref_f}  > {ref_f_proc}''')
                 os.system(f'''cut -d"," -f4 {cal_f}  > {cal_f_proc}''')
-                cluster_data = True
                 f1 = open(ref_f_proc,"r")
                 ls1 = list(map(int,f1.readlines()[1:]))
                 f2 = open(cal_f_proc,"r")
@@ -126,7 +134,7 @@ if args.jenkins_cov:
     cmd = f"cd ../ && snakemake extract_testing_file --quiet --use-conda -F -n --conda-frontend mamba --configfile testing/testing.yaml -j 1 | head -n -1 | tail -n +3 | {awk} | sort | uniq >> testing/cov_extract_testing_file.log"
     print(cmd)
     status = os.system(cmd)
-    
+
     if status != 0:
         sys.exit(5)
     cmd = f"cd ../ && snakemake main --quiet --use-conda -F -n --conda-frontend mamba --configfile testing/testing.yaml -j 1 | head -n -1 | tail -n +3 | {awk} | sort | uniq >> testing/cov_main.log"
