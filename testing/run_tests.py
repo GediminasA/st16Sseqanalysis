@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, os, colorama, filecmp
+import argparse, os, colorama, filecmp, sys
 from colorama import Fore
 colorama.init()
 def compare_with_reference(test, calc):
@@ -97,15 +97,18 @@ parser.add_argument('--only-compare',
                     Only compare against a reference files', action='store_true')
 parser.add_argument('--threads', help='Number of threads. Currently testing is done only on one node', type=int, default=4)
 parser.add_argument('--testing-result', help='file for testing summary', type=str, default="testing_res.txt")
+parser.add_argument('--jenkins-cov', help='Snakemake cov calculations', action='store_true')
 args = parser.parse_args()
 #Extract the testing files
 test1_r1=os.path.abspath("../datasets/testingdata/remote/zymo_simulated_real_insert_distribution/Zymo10.1Sim_S1_L001_R1_001.fastq.gz")
 test1_r2=os.path.abspath("../datasets/testingdata/remote/zymo_simulated_real_insert_distribution/Zymo10.1Sim_S1_L001_R2_001.fastq.gz")
+
 if not os.path.exists(test1_r1) or not os.path.exists(test1_r2):
     print("Downloading reference files...")
-    os.system(f"cd ../ ; snakemake --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads}  extract_testing_file ")
+    os.system(f"cd ../ ; snakemake --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads} extract_testing_file")
 print(f"For the test set #1 these input files will be used:\n\t{test1_r1}\n\t{test1_r2}")
 test1_refs = "testingdata/reference"
+
 if not os.path.exists(test1_refs):
     print("Extractiong reference set")
     os.system(f"tar xvzf {test1_refs}.tar.gz")
@@ -116,19 +119,41 @@ else:
 #first test seet of files more ... be added later
 calc1="testingdata/calculated"
 run_calcualtions=True
+
+if args.jenkins_cov:
+    run_calcualtions=False
+    awk = "awk '{print $2}'"
+    cmd = f"cd ../ && snakemake extract_testing_file --quiet --use-conda -F -n --conda-frontend mamba --configfile testing/testing.yaml -j 1 | head -n -1 | tail -n +3 | {awk} | sort | uniq >> testing/cov_extract_testing_file.log"
+    print(cmd)
+    status = os.system(cmd)
+    
+    if status != 0:
+        sys.exit(5)
+    cmd = f"cd ../ && snakemake main --quiet --use-conda -F -n --conda-frontend mamba --configfile testing/testing.yaml -j 1 | head -n -1 | tail -n +3 | {awk} | sort | uniq >> testing/cov_main.log"
+    print(cmd)
+    status = os.system(cmd)
+    if status != 0:
+        sys.exit(5)
+
+    os.system("cat cov_*.log | sort | uniq > USED_RULES")
+    os.system("cd .. && grep -Poh 'rule .+:' $(ls snakefiles/*.smk| grep -vP '/0_') | sed 's/rule //' | sed 's/ //g' | sed 's/://' | sort | uniq > testing/ALL_RULES")
+    os.system("grep -xvf USED_RULES ALL_RULES > LEFT_RULES")
+
+
 if args.only_compare:
     if os.path.exists(calc1):
         print(f"Analysing dir {calc1} wo calculatioins")
         run_calcualtions=False
     else:
         print(f"Directory {calc1} doesn't exist. Option --only-comapre is ignored")
+
 if run_calcualtions:
     print(f"Cleaning the directory {calc1}")
     os.system(f"rm -r {calc1} ")
     print("Starting testing run")
     run_log = calc1+"._run_log.txt"
     print(f"\t...log could be checked here: {run_log}")
-    os.system(f" cd ../ ; snakemake main --nolock --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads} --nt > testing/{run_log} 2>&1")
+    os.system(f" cd ../ ;snakemake main --nolock --use-conda --conda-frontend mamba --configfile testing/testing.yaml -j {args.threads} > testing/{run_log} 2>&1")
 
 print("TESTING GENERATED FILES WITH EXPECTED. SET#1")
 ok,missing,different=compare_with_reference(test1_refs,calc1)
@@ -154,3 +179,6 @@ else:
             print(f"\t check {g}.diff",file=f_res)
 print(f"Summary written to: {args.testing_result}")
 f_res.close()
+
+if not ok and not args.jenkins_cov:
+    sys.exit(5)

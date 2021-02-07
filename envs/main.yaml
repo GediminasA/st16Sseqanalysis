@@ -20,5 +20,6 @@ dependencies:
   - spades=3.14.0
   - swarm=3.0.0
   - vsearch=2.15.0
+  - lxml
   - pip:
     - colorama==0.4.3 
