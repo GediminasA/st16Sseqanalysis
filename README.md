@@ -64,7 +64,7 @@ The workflow will download small versions of several databases. In the example b
 
 ## Example analysis
 
-* Run `snakemake` to extyract examplary raw files:
+* Run `snakemake` to extract examplary raw files:
 ```bash
    #Presume that 12 threads are available (option -j 12). 
    #Prepare the example dataset:

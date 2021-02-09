@@ -113,7 +113,16 @@ rule getRevComplofPremerged:
     output:
         tmp + "/16S_amplicons/R1clustering/{stem}_clusters_reads/{id}_R2_premerged.fastq.gz",
     shell:
-        "seqkit seq --reverse --complement -o {output} {input}"
+        """
+        seqkit seq --reverse --complement -o {output} {input}
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            exit 0
+        else
+            exit 0
+        fi
+        """
 
 rule get_bothr1_premerge:
     input:
