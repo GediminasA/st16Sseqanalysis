@@ -1,3 +1,0 @@
-[submodule "scripts/julia_modules/st16SseqJuliaTools"]
-	path = scripts/julia_modules/st16SseqJuliaTools
-	url = git@github.com:thermofisher/st16SseqJuliaTools.git
